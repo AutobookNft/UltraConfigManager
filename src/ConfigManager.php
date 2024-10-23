@@ -1,6 +1,6 @@
 <?php
 
-namespace Fabio\ConfigManager;
+namespace Fabio\PerfectConfigManager;
 
 use Illuminate\Support\Facades\Log;
 

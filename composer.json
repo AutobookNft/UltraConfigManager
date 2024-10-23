@@ -19,5 +19,13 @@
         "monolog/monolog": "^3.7",
         "illuminate/support": "^11.29",
         "laravel/framework": "^11.29"
-    }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Fabio\\PerfectConfigManager\\Providers\\ConfigManagerServiceProvider",
+                "Fabio\\PerfectConfigManager\\Providers\\ValidationServiceProvider"
+            ]
+        }
+}
 }
