@@ -1,11 +1,11 @@
 {
-    "name": "fabiocherici/perfect-config-manager",
+    "name": "fabiocherici/ultra-config-manager",
     "description": "A configuration management library designed for Laravel to streamline handling configuration values with validation support.",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Fabio\\PerfectConfigManager\\": "src/"
+            "Fabio\\UltraConfigManager\\": "src/"
         }
     },
     "authors": [
@@ -23,8 +23,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Fabio\\PerfectConfigManager\\Providers\\ConfigManagerServiceProvider",
-                "Fabio\\PerfectConfigManager\\Providers\\ValidationServiceProvider"
+                "Fabio\\UltraConfigManager\\Providers\\UltraConfigManagerServiceProvider",
+                "Fabio\\UltraConfigManager\\Providers\\ValidationServiceProvider"
             ]
         }
 }

@@ -1,15 +1,15 @@
 <?php
 
-namespace Fabio\PerfectConfigManager;
+namespace Fabio\UltraConfigManager;
 
 use Illuminate\Support\Facades\Log;
 
-class ConfigManager
+class UltraConfigManager
 {
     // Method to retrieve and validate configuration values
     public static function getConfig($key, $default = null)
     {
-        $value = config("config_manager.{$key}", $default);
+        $value = config("ultra_fc_config_manager.{$key}", $default);
 
         // Validate based on the key
         switch ($key) {
