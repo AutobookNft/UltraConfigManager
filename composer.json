@@ -17,8 +17,8 @@
     "minimum-stability": "stable",
     "require": {
         "monolog/monolog": "^3.7",
-        "illuminate/support": "^11.29",
-        "laravel/framework": "^11.29"
+        "laravel/framework": "^12.0",
+        "illuminate/support": "*"
     },
     "extra": {
         "laravel": {
