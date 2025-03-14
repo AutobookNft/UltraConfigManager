@@ -1,6 +1,6 @@
 <?php
 
-namespace Fabio\UltraConfigManager;
+namespace Ultra\UltraConfigManager;
 
 use Illuminate\Support\Facades\Log;
 
