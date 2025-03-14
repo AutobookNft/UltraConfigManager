@@ -17,7 +17,7 @@
     "minimum-stability": "stable",
     "require": {
         "monolog/monolog": "^3.7",
-        "laravel/framework": "^9.0",
+        "laravel/framework": "^10.0",
         "illuminate/support": "*"
     },
     "extra": {
@@ -27,5 +27,5 @@
                 "Fabio\\UltraConfigManager\\Providers\\ValidationServiceProvider"
             ]
         }
-}
+    }
 }
