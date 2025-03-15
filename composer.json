@@ -24,8 +24,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Fabio\\UltraConfigManager\\Providers\\UltraConfigManagerServiceProvider",
-                "Fabio\\UltraConfigManager\\Providers\\ValidationServiceProvider"
+                "Fabio\\UltraConfigManager\\UltraConfigManagerServiceProvider",
+                "Fabio\\UltraConfigManager\\ValidationServiceProvider"
             ]
         }
     }
