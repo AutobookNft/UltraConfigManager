@@ -1,8 +1,8 @@
 <?php
 
-namespace Fabio\UltraConfigManager\Providers;
+namespace Ultra\UltraConfigManager\Providers;
 
-use Fabio\UltraConfigManager\UltraConfigManager;
+use Ultra\UltraConfigManager\UltraConfigManager;
 use Illuminate\Support\ServiceProvider;
 
 class UltraConfigManagerServiceProvider extends ServiceProvider

@@ -1595,7 +1595,7 @@ class Builder implements BuilderContract
     }
 
     /**
-     * Specify relationships that should be eager loaded.
+     * Set the relationships that should be eager loaded.
      *
      * @param  array<array-key, array|(\Closure(\Illuminate\Database\Eloquent\Relations\Relation<*,*,*>): mixed)|string>|string  $relations
      * @param  (\Closure(\Illuminate\Database\Eloquent\Relations\Relation<*,*,*>): mixed)|string|null  $callback
@@ -1953,26 +1953,6 @@ class Builder implements BuilderContract
     public function withoutEagerLoads()
     {
         return $this->setEagerLoads([]);
-    }
-
-    /**
-     * Get the "limit" value from the query or null if it's not set.
-     *
-     * @return mixed
-     */
-    public function getLimit()
-    {
-        return $this->query->getLimit();
-    }
-
-    /**
-     * Get the "offset" value from the query or null if it's not set.
-     *
-     * @return mixed
-     */
-    public function getOffset()
-    {
-        return $this->query->getOffset();
     }
 
     /**

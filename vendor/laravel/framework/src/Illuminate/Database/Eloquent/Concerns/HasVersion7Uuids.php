@@ -4,17 +4,17 @@ namespace Illuminate\Database\Eloquent\Concerns;
 
 use Illuminate\Support\Str;
 
-trait HasVersion4Uuids
+trait HasVersion7Uuids
 {
     use HasUuids;
 
     /**
-     * Generate a new UUID (version 4) for the model.
+     * Generate a new UUID (version 7) for the model.
      *
      * @return string
      */
     public function newUniqueId()
     {
-        return (string) Str::orderedUuid();
+        return (string) Str::uuid7();
     }
 }

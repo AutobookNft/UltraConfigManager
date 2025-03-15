@@ -1,6 +1,6 @@
 <?php
 
-namespace Fabio\UltraConfigManager\Providers;
+namespace Ultra\UltraConfigManager\Providers;
 
 use Illuminate\Support\ServiceProvider;
 

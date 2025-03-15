@@ -557,13 +557,12 @@ class SqlServerGrammar extends Grammar
      * Wrap a table in keyword identifiers.
      *
      * @param  \Illuminate\Contracts\Database\Query\Expression|string  $table
-     * @param  string|null  $prefix
      * @return string
      */
-    public function wrapTable($table, $prefix = null)
+    public function wrapTable($table)
     {
         if (! $this->isExpression($table)) {
-            return $this->wrapTableValuedFunction(parent::wrapTable($table, $prefix));
+            return $this->wrapTableValuedFunction(parent::wrapTable($table));
         }
 
         return $this->getValue($table);

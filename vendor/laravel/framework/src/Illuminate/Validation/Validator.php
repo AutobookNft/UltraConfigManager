@@ -421,8 +421,8 @@ class Validator implements ValidatorContract
     /**
      * Replace each field parameter dot placeholder with dot.
      *
-     * @param  string  $value
-     * @return string
+     * @param  array  $parameters
+     * @return array
      */
     protected function replaceDotPlaceholderInParameters(array $parameters)
     {
@@ -1244,9 +1244,9 @@ class Validator implements ValidatorContract
         $response = (new ValidationRuleParser($this->data))
             ->explode(ValidationRuleParser::filterConditionalRules($rules, $this->data));
 
-        foreach ($response->rules as $key => $rule) {
-            $this->rules[$key] = array_merge($this->rules[$key] ?? [], $rule);
-        }
+        $this->rules = array_merge_recursive(
+            $this->rules, $response->rules
+        );
 
         $this->implicitAttributes = array_merge(
             $this->implicitAttributes, $response->implicitAttributes
@@ -1321,7 +1321,7 @@ class Validator implements ValidatorContract
     public function addExtensions(array $extensions)
     {
         if ($extensions) {
-            $keys = array_map(Str::snake(...), array_keys($extensions));
+            $keys = array_map([Str::class, 'snake'], array_keys($extensions));
 
             $extensions = array_combine($keys, array_values($extensions));
         }
@@ -1408,7 +1408,7 @@ class Validator implements ValidatorContract
     public function addReplacers(array $replacers)
     {
         if ($replacers) {
-            $keys = array_map(Str::snake(...), array_keys($replacers));
+            $keys = array_map([Str::class, 'snake'], array_keys($replacers));
 
             $replacers = array_combine($keys, array_values($replacers));
         }

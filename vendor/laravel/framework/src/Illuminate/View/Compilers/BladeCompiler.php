@@ -812,7 +812,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     public function anonymousComponentPath(string $path, ?string $prefix = null)
     {
-        $prefixHash = hash('xxh128', $prefix ?: $path);
+        $prefixHash = md5($prefix ?: $path);
 
         $this->anonymousComponentPaths[] = [
             'path' => $path,

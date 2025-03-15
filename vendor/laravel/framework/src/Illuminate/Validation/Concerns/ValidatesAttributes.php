@@ -1389,18 +1389,11 @@ trait ValidatesAttributes
      *
      * @param  string  $attribute
      * @param  mixed  $value
-     * @param  array<int, string>  $parameters
      * @return bool
      */
-    public function validateImage($attribute, $value, $parameters = [])
+    public function validateImage($attribute, $value)
     {
-        $mimes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-
-        if (is_array($parameters) && in_array('allow_svg', $parameters)) {
-            $mimes[] = 'svg';
-        }
-
-        return $this->validateMimes($attribute, $value, $mimes);
+        return $this->validateMimes($attribute, $value, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']);
     }
 
     /**
@@ -2598,22 +2591,11 @@ trait ValidatesAttributes
      *
      * @param  string  $attribute
      * @param  mixed  $value
-     * @param  array<int, int<0, 8>|'max'>  $parameters
      * @return bool
      */
-    public function validateUuid($attribute, $value, $parameters)
+    public function validateUuid($attribute, $value)
     {
-        $version = null;
-
-        if ($parameters !== null && count($parameters) === 1) {
-            $version = $parameters[0];
-
-            if ($version !== 'max') {
-                $version = (int) $parameters[0];
-            }
-        }
-
-        return Str::isUuid($value, $version);
+        return Str::isUuid($value);
     }
 
     /**
