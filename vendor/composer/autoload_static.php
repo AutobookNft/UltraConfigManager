@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
+class ComposerStaticInit876ce74f0fe7627108f739cf4450257a
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -43,6 +43,10 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         'W' => 
         array (
             'Webmozart\\Assert\\' => 17,
+        ),
+        'U' => 
+        array (
+            'Ultra\\UltraConfigManager\\' => 25,
         ),
         'T' => 
         array (
@@ -126,7 +130,6 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         'F' => 
         array (
             'Fruitcake\\Cors\\' => 15,
-            'Fabio\\UltraConfigManager\\' => 25,
         ),
         'E' => 
         array (
@@ -159,6 +162,10 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         'Webmozart\\Assert\\' => 
         array (
             0 => __DIR__ . '/..' . '/webmozart/assert/src',
+        ),
+        'Ultra\\UltraConfigManager\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
         ),
         'TijsVerkoyen\\CssToInlineStyles\\' => 
         array (
@@ -294,8 +301,8 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -323,8 +330,8 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         ),
         'League\\Uri\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/uri',
-            1 => __DIR__ . '/..' . '/league/uri-interfaces',
+            0 => __DIR__ . '/..' . '/league/uri-interfaces',
+            1 => __DIR__ . '/..' . '/league/uri',
         ),
         'League\\MimeTypeDetection\\' => 
         array (
@@ -387,10 +394,6 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
         'Fruitcake\\Cors\\' => 
         array (
             0 => __DIR__ . '/..' . '/fruitcake/php-cors/src',
-        ),
-        'Fabio\\UltraConfigManager\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/src',
         ),
         'Egulias\\EmailValidator\\' => 
         array (
@@ -515,9 +518,9 @@ class ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInite3a3a01058d849e0b05cd8cc4d5e3a2c::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit876ce74f0fe7627108f739cf4450257a::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit876ce74f0fe7627108f739cf4450257a::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit876ce74f0fe7627108f739cf4450257a::$classMap;
 
         }, null, ClassLoader::class);
     }
