@@ -60,10 +60,8 @@ class UltraConfigAudit extends Model
      */
     public function user()
     {
-        $userModel = config('auth.providers.users.model', \App\Models\User::class);
-        return $this->belongsTo($userModel, 'user_id')->withDefault(['name' => 'Unknown User']);
+        return $this->belongsTo(User::class, 'user_id')->withDefault(['name' => 'Unknown User']);
     }
-
     /**
      * Boot the model and add auditing protections.
      *

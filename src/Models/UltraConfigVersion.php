@@ -55,6 +55,16 @@ class UltraConfigVersion extends Model
     ];
 
     /**
+     * Get the user who created this version.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id')->withDefault(['name' => 'Unknown User']);
+    }
+
+    /**
      * Get the configuration this version belongs to.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
