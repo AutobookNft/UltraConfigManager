@@ -22,7 +22,7 @@
                 <tr class="hover:bg-gray-50 transition duration-200">
                     <td class="py-4 px-6 border-b text-gray-800">{{ $config->key }}</td>
                     <td class="py-4 px-6 border-b text-gray-600">{{ $config->value }}</td>
-                    <td class="py-4 px-6 border-b text-gray-600">{{ $config->category }}</td>
+                    <td class="py-4 px-6 border-b text-gray-600">{{ $config->category ? ucfirst($config->category->value) : 'Nessuna' }}</td>
                     <td class="py-4 px-6 border-b">
                         <div class="flex space-x-4">
                             <a href="{{ route('uconfig.edit', $config->id) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow">Modifica</a>

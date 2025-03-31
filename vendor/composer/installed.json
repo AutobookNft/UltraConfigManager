@@ -2862,17 +2862,17 @@
         },
         {
             "name": "nette/utils",
-            "version": "v4.0.5",
-            "version_normalized": "4.0.5.0",
+            "version": "v4.0.6",
+            "version_normalized": "4.0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nette/utils.git",
-                "reference": "736c567e257dbe0fcf6ce81b4d6dbe05c6899f96"
+                "reference": "ce708655043c7050eb050df361c5e313cf708309"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nette/utils/zipball/736c567e257dbe0fcf6ce81b4d6dbe05c6899f96",
-                "reference": "736c567e257dbe0fcf6ce81b4d6dbe05c6899f96",
+                "url": "https://api.github.com/repos/nette/utils/zipball/ce708655043c7050eb050df361c5e313cf708309",
+                "reference": "ce708655043c7050eb050df361c5e313cf708309",
                 "shasum": ""
             },
             "require": {
@@ -2896,7 +2896,7 @@
                 "ext-mbstring": "to use Strings::lower() etc...",
                 "ext-tokenizer": "to use Nette\\Utils\\Reflection::getUseStatements()"
             },
-            "time": "2024-08-07T15:39:19+00:00",
+            "time": "2025-03-30T21:06:30+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -2945,7 +2945,7 @@
             ],
             "support": {
                 "issues": "https://github.com/nette/utils/issues",
-                "source": "https://github.com/nette/utils/tree/v4.0.5"
+                "source": "https://github.com/nette/utils/tree/v4.0.6"
             },
             "install-path": "../nette/utils"
         },
@@ -8704,6 +8704,81 @@
             "install-path": "../tijsverkoyen/css-to-inline-styles"
         },
         {
+            "name": "ultra/ultra-error-manager",
+            "version": "dev-main",
+            "version_normalized": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AutobookNft/UltraErrorManager.git",
+                "reference": "80cf6f82c4e9d9b44fce650da72219e346229191"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/80cf6f82c4e9d9b44fce650da72219e346229191",
+                "reference": "80cf6f82c4e9d9b44fce650da72219e346229191",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/http": "^11.0",
+                "illuminate/log": "^11.0",
+                "illuminate/mail": "^11.0",
+                "illuminate/support": "^11.0",
+                "illuminate/view": "^11.0",
+                "php": "^8.1|^8.2|^8.3",
+                "ultra/ultra-log-manager": "dev-main",
+                "ultra/ultra-translation-manager": "dev-main"
+            },
+            "require-dev": {
+                "fakerphp/faker": "^1.23",
+                "mockery/mockery": "^1.6",
+                "orchestra/testbench": "^9.0",
+                "phpunit/phpunit": "^11.5.3"
+            },
+            "time": "2025-03-31T17:26:18+00:00",
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Ultra\\ErrorManager\\Providers\\UltraErrorManagerServiceProvider"
+                    ],
+                    "aliases": {
+                        "UltraError": "Ultra\\ErrorManager\\Facades\\UltraError",
+                        "TestingConditions": "Ultra\\ErrorManager\\Facades\\TestingConditions"
+                    }
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Ultra\\ErrorManager\\": "src/"
+                },
+                "files": [
+                    "src/Helpers/helpers.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Ultra\\ErrorManager\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabio Cherici",
+                    "email": "fabiocherici@gmail.com"
+                }
+            ],
+            "description": "Advanced error management library for the Ultra ecosystem",
+            "support": {
+                "source": "https://github.com/AutobookNft/UltraErrorManager/tree/main",
+                "issues": "https://github.com/AutobookNft/UltraErrorManager/issues"
+            },
+            "install-path": "../ultra/ultra-error-manager"
+        },
+        {
             "name": "ultra/ultra-log-manager",
             "version": "dev-main",
             "version_normalized": "dev-main",
@@ -8758,6 +8833,64 @@
                 "issues": "https://github.com/AutobookNft/UltraLogManager/issues"
             },
             "install-path": "../ultra/ultra-log-manager"
+        },
+        {
+            "name": "ultra/ultra-translation-manager",
+            "version": "dev-main",
+            "version_normalized": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AutobookNft/UltraTranslationManager.git",
+                "reference": "8417cc879c33ea7c254b82bcbe0d7fc42851822a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AutobookNft/UltraTranslationManager/zipball/8417cc879c33ea7c254b82bcbe0d7fc42851822a",
+                "reference": "8417cc879c33ea7c254b82bcbe0d7fc42851822a",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/cache": "^11.0",
+                "illuminate/support": "^11.0",
+                "illuminate/translation": "^11.0",
+                "laravel/framework": "^11.0",
+                "php": "^8.1|^8.2|^8.3",
+                "ultra/ultra-log-manager": "dev-main"
+            },
+            "time": "2025-03-30T09:13:44+00:00",
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Ultra\\TranslationManager\\Providers\\UltraTranslationServiceProvider"
+                    ],
+                    "aliases": {
+                        "UltraTrans": "Ultra\\TranslationManager\\Facades\\UltraTrans"
+                    }
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Ultra\\TranslationManager\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabio Cherici",
+                    "email": "fabiocherici@gmail.com"
+                }
+            ],
+            "description": "Ultra Translation Manager for managing translations in the Ultra ecosystem",
+            "support": {
+                "source": "https://github.com/AutobookNft/UltraTranslationManager/tree/main",
+                "issues": "https://github.com/AutobookNft/UltraTranslationManager/issues"
+            },
+            "install-path": "../ultra/ultra-translation-manager"
         },
         {
             "name": "vlucas/phpdotenv",

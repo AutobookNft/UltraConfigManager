@@ -4,6 +4,8 @@ namespace Ultra\UltraConfigManager\Providers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
+use Ultra\UltraConfigManager\Dao\EloquentConfigDao;
 use Ultra\UltraConfigManager\UConfig;
 use Ultra\UltraConfigManager\EnvLoader;
 use Ultra\UltraConfigManager\Facades\UConfig as FacadesUConfig;
@@ -22,6 +24,11 @@ class UConfigServiceProvider extends ServiceProvider
         $this->app->singleton('uconfig', function ($app) {
             $envLoader = new EnvLoader();
             return new UConfig($envLoader);
+        });
+
+         // Registriamo il DAO
+         $this->app->singleton(ConfigDaoInterface::class, function ($app) {
+            return new EloquentConfigDao();
         });
 
     }

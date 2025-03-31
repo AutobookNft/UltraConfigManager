@@ -3,6 +3,7 @@
 namespace Ultra\UltraConfigManager\Models;
 
 use Ultra\UltraConfigManager\Casts\EncryptedCast;
+use Ultra\UltraConfigManager\Enums\CategoryEnum;
 use Ultra\UltraLogManager\Facades\UltraLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -52,6 +53,7 @@ class UltraConfigModel extends Model
      */
     protected $casts = [
         'value' => EncryptedCast::class,
+        'category' => CategoryEnum::class, // Cast al nostro Enum
     ];
 
     /**

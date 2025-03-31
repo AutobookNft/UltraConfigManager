@@ -3,7 +3,7 @@
         'name' => 'ultra/ultra-config-manager',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'd7e0fa294ab5a4a89532fdce21650a4f210ceefc',
+        'reference' => 'd31e615be3ca468d531ecdac1dc6e62449e057f2',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -545,9 +545,9 @@
             'dev_requirement' => false,
         ),
         'nette/utils' => array(
-            'pretty_version' => 'v4.0.5',
-            'version' => '4.0.5.0',
-            'reference' => '736c567e257dbe0fcf6ce81b4d6dbe05c6899f96',
+            'pretty_version' => 'v4.0.6',
+            'version' => '4.0.6.0',
+            'reference' => 'ce708655043c7050eb050df361c5e313cf708309',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nette/utils',
             'aliases' => array(),
@@ -1340,10 +1340,21 @@
         'ultra/ultra-config-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'd7e0fa294ab5a4a89532fdce21650a4f210ceefc',
+            'reference' => 'd31e615be3ca468d531ecdac1dc6e62449e057f2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'ultra/ultra-error-manager' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '80cf6f82c4e9d9b44fce650da72219e346229191',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ultra/ultra-error-manager',
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
             'dev_requirement' => false,
         ),
         'ultra/ultra-log-manager' => array(
@@ -1352,6 +1363,17 @@
             'reference' => '7c1b3df7c15ab8e9f1abfb7139cb711d384e46ce',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-log-manager',
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
+            'dev_requirement' => false,
+        ),
+        'ultra/ultra-translation-manager' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '8417cc879c33ea7c254b82bcbe0d7fc42851822a',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ultra/ultra-translation-manager',
             'aliases' => array(
                 0 => '9999999-dev',
             ),

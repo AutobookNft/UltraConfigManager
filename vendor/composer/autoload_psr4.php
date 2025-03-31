@@ -11,6 +11,8 @@ return array(
     'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
     'Ultra\\UltraLogManager\\' => array($vendorDir . '/ultra/ultra-log-manager/src'),
     'Ultra\\UltraConfigManager\\' => array($baseDir . '/src'),
+    'Ultra\\TranslationManager\\' => array($vendorDir . '/ultra/ultra-translation-manager/src'),
+    'Ultra\\ErrorManager\\' => array($vendorDir . '/ultra/ultra-error-manager/src'),
     'TijsVerkoyen\\CssToInlineStyles\\' => array($vendorDir . '/tijsverkoyen/css-to-inline-styles/src'),
     'Termwind\\' => array($vendorDir . '/nunomaduro/termwind/src'),
     'Symfony\\Polyfill\\Uuid\\' => array($vendorDir . '/symfony/polyfill-uuid'),

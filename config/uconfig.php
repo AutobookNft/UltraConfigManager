@@ -34,5 +34,3 @@ return [
 
     'use_spatie_permissions' => true,
 ];  
-
-]; 
