@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Dao\EloquentConfigDao;
+use Ultra\UltraConfigManager\Http\Middleware\CheckConfigManagerRole;
 use Ultra\UltraConfigManager\UConfig;
 use Ultra\UltraConfigManager\EnvLoader;
 use Ultra\UltraConfigManager\Facades\UConfig as FacadesUConfig;
-use Ultra\UltraConfigManager\Middleware\CheckConfigManagerRole;
 
 
 class UConfigServiceProvider extends ServiceProvider
@@ -63,7 +63,7 @@ class UConfigServiceProvider extends ServiceProvider
         if (file_exists(base_path('routes/uconfig.php'))) {
             $this->loadRoutesFrom(base_path('routes/uconfig.php'));
         } else {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            $this->loadRoutesFrom(__DIR__.'./../../routes/web.php');
         }
 
         // Registra il middleware
