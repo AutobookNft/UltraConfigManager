@@ -8785,12 +8785,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "7c1b3df7c15ab8e9f1abfb7139cb711d384e46ce"
+                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/7c1b3df7c15ab8e9f1abfb7139cb711d384e46ce",
-                "reference": "7c1b3df7c15ab8e9f1abfb7139cb711d384e46ce",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/82a5c0fa014ff363571f91d65c7dc0775bb28543",
+                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543",
                 "shasum": ""
             },
             "require": {
@@ -8799,10 +8799,9 @@
                 "illuminate/support": "^11.0",
                 "laravel/framework": "^11.0",
                 "monolog/monolog": "^3.0",
-                "php": "^8.1|^8.2|^8.3",
-                "ultra/ultra-config-manager": "dev-main"
+                "php": "^8.1|^8.2|^8.3"
             },
-            "time": "2025-03-30T09:45:36+00:00",
+            "time": "2025-03-31T17:52:22+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
