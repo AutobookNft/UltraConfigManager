@@ -64,7 +64,8 @@ class UltraConfigController extends Controller
         $this->configDao->createAudit($config->id, 'created', null, $config->value, $userId);
 
         $this->uconfig->refreshConfigCache($data['key']);
-        return redirect()->route('uconfig.index')->with('success', 'Configurazione aggiunta con successo.');
+        return redirect()->route('uconfig.index')->with('success', __('uconfig::uconfig.success.created'));
+
     }
 
     public function edit($id)
@@ -108,7 +109,8 @@ class UltraConfigController extends Controller
         $this->configDao->createAudit($config->id, 'updated', $oldValue, $config->value, $userId);
 
         $this->uconfig->refreshConfigCache($config->key);
-        return redirect()->route('uconfig.index')->with('success', 'Configurazione aggiornata con successo.');
+        return redirect()->route('uconfig.index')->with('success', __('uconfig::uconfig.success.updated'));
+
     }
 
     public function destroy($id, $userId = null)

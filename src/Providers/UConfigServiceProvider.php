@@ -57,6 +57,8 @@ class UConfigServiceProvider extends ServiceProvider
             $this->publishTheFilea();
         }
 
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'uconfig');
+
         // Carica le rotte pubblicate o quelle predefinite
         if (file_exists(base_path('routes/uconfig.php'))) {
             $this->loadRoutesFrom(base_path('routes/uconfig.php'));
@@ -137,6 +139,8 @@ class UConfigServiceProvider extends ServiceProvider
             __DIR__.'/../routes/web.php' => $this->app->basePath('routes/uconfig.php'),
             // Pubblica il file di alias
             __DIR__.'/../config/aliases.php' => base_path('bootstrap/aliases.php'),
+            // Pubblica le traduzioni
+            __DIR__.'/../resources/lang' => resource_path('lang/vendor/uconfig'),
         ], 'uconfig-resources'); // Usa un unico tag per tutte le risorse
     }
 }
