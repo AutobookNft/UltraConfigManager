@@ -8,7 +8,7 @@ use Ultra\UltraConfigManager\UConfig as UConfigService;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Enums\CategoryEnum;
 use Ultra\UltraLogManager\Facades\UltraLog;
-use Ultra\UltraErrorManager\Facades\UltraError;
+use Ultra\ErrorManager\Facades\UltraError;
 
 class UltraConfigController extends Controller
 {

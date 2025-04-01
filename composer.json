@@ -35,7 +35,8 @@
                 "Ultra\\UltraConfigManager\\Providers\\UConfigServiceProvider"
             ],
             "aliases": {
-                "UltraConfig": "Ultra\\UltraConfigManager\\Facades\\UltraConfig"
+                "UltraConfig": "Ultra\\UltraConfigManager\\Facades\\UltraConfig",
+                "UltraError": "Ultra\\ErrorManager\\Facades\\UltraError"
             }
         }
     },

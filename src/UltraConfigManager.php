@@ -7,7 +7,6 @@ use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Models\UltraConfigModel; 
 use Ultra\UltraConfigManager\Models\UltraConfigVersion;
 use Ultra\UltraConfigManager\Models\UltraConfigAudit;
-use Ultra\UltraConfigManager\Permissions\PermissionManager;
 use Ultra\UltraConfigManager\Services\VersionManager;
 use Ultra\UltraLogManager\Facades\UltraLog;
 use Illuminate\Support\Facades\Cache;
@@ -25,25 +24,11 @@ use Illuminate\Support\Facades\Schema;
 class UltraConfigManager
 {
     /**
-     * The permission manager instance for access control.
-     *
-     * @var PermissionManager|null
-     */
-    protected ?PermissionManager $permissionManager = null;
-
-    /**
      * In-memory configuration array.
      *
      * @var array<string, array<string, mixed>>
      */
     private array $config = [];
-
-    /**
-     * EnvLoader instance for loading environment variables.
-     *
-     * @var EnvLoader
-     */
-    protected EnvLoader $envLoader;
 
     /**
      * Global constants used across the system.
@@ -79,35 +64,40 @@ class UltraConfigManager
      * Initializes the configuration manager with environment loader, constants, and version manager.
      * Loads configurations on instantiation.
      *
-     * @param EnvLoader $envLoader Instance to load environment variables.
      * @param GlobalConstants $globalConstants Global constants for the system.
      * @param VersionManager $versionManager Manager for configuration versions.
+     * @param ConfigDaoInterface $configDao Data access object for configuration operations.
      */
     public function __construct(
-        EnvLoader $envLoader,
         GlobalConstants $globalConstants,
         VersionManager $versionManager,
         ConfigDaoInterface $configDao
     ) {
-        $this->envLoader = $envLoader;
         $this->globalConstants = $globalConstants;
         $this->versionManager = $versionManager;
         $this->configDao = $configDao;
-        $this->permissionManager = new PermissionManager();
         $this->loadConfig();
         UltraLog::info('UCM Action', 'UltraConfigManager initialized');
     }
 
-
     /**
-     * Get the permission manager instance.
+     * Load configurations from environment variables.
      *
-     * @return PermissionManager The permission manager for access control.
+     * Merges environment variables into the in-memory configuration array, skipping duplicates.
+     *
+     * @return void
      */
-    public function permissions(): PermissionManager
-    {
-        return $this->permissionManager;
-    }
+
+     private function loadFromEnv(): void
+     {
+         $envConfig = $_ENV; // Usa direttamente $_ENV
+         foreach ($envConfig as $key => $value) {
+             if (!array_key_exists($key, $this->config)) {
+                 $this->config[$key] = ['value' => $value];
+             }
+         }
+         UltraLog::debug('UCM Action', 'Environment variables merged into configurations');
+     }
 
     /**
      * Load all configurations into memory.
@@ -173,24 +163,6 @@ class UltraConfigManager
         return $configArray;
     }
 
-
-    /**
-     * Load configurations from environment variables.
-     *
-     * Merges environment variables into the in-memory configuration array, skipping duplicates.
-     *
-     * @return void
-     */
-    private function loadFromEnv(): void
-    {
-        $envConfig = $this->envLoader->all();
-        foreach ($envConfig as $key => $value) {
-            if (!array_key_exists($key, $this->config)) {
-                $this->config[$key] = ['value' => $value];
-            }
-        }
-        UltraLog::debug('UCM Action', 'Environment variables merged into configurations');
-    }
 
     /**
      * Retrieve a configuration value.

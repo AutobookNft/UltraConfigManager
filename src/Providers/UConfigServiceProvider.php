@@ -4,12 +4,12 @@ namespace Ultra\UltraConfigManager\Providers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Ultra\UltraConfigManager\Constants\GlobalConstants;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Dao\EloquentConfigDao;
 use Ultra\UltraConfigManager\Http\Middleware\CheckConfigManagerRole;
-use Ultra\UltraConfigManager\UConfig;
-use Ultra\UltraConfigManager\EnvLoader;
-use Ultra\UltraConfigManager\Facades\UConfig as FacadesUConfig;
+use Ultra\UltraConfigManager\Services\VersionManager;
+use Ultra\UltraConfigManager\UltraConfigManager;
 
 
 class UConfigServiceProvider extends ServiceProvider
@@ -22,8 +22,11 @@ class UConfigServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton('uconfig', function ($app) {
-            $envLoader = new EnvLoader();
-            return new UConfig($envLoader);
+            return new UltraConfigManager(
+                new GlobalConstants(),
+                new VersionManager(),
+                $app->make(ConfigDaoInterface::class)
+            );
         });
 
          // Registriamo il DAO
