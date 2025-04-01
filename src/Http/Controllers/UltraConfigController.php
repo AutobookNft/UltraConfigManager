@@ -4,7 +4,7 @@ namespace Ultra\UltraConfigManager\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Ultra\UltraConfigManager\UConfig as UConfigService;
+use Ultra\UltraConfigManager\UltraConfigManager;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Enums\CategoryEnum;
 use Ultra\UltraLogManager\Facades\UltraLog;
@@ -15,7 +15,7 @@ class UltraConfigController extends Controller
     protected $uconfig;
     protected $configDao;
 
-    public function __construct(UConfigService $uconfig, ConfigDaoInterface $configDao)
+    public function __construct(UltraConfigManager $uconfig, ConfigDaoInterface $configDao)
     {
         $this->uconfig = $uconfig;
         $this->configDao = $configDao;
