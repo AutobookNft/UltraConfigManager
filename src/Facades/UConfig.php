@@ -8,6 +8,6 @@ class UConfig extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'uconfig'; // Deve corrispondere al binding nel service provider
+        return 'uconfig'; 
     }
 } 

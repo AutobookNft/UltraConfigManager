@@ -2,8 +2,9 @@
 
 namespace Ultra\UltraConfigManager\Providers;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Ultra\UltraConfigManager\Constants\GlobalConstants;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
 use Ultra\UltraConfigManager\Dao\EloquentConfigDao;
@@ -11,16 +12,18 @@ use Ultra\UltraConfigManager\Http\Middleware\CheckConfigManagerRole;
 use Ultra\UltraConfigManager\Services\VersionManager;
 use Ultra\UltraConfigManager\UltraConfigManager;
 use Ultra\UltraConfigManager\Facades\UConfig;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class UConfigServiceProvider extends ServiceProvider
 {
     /**
-     * Registra i servizi nel contenitore.
+     * Register bindings and core services.
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
+        // Bind main UConfig service
         $this->app->singleton('uconfig', function ($app) {
             return new UltraConfigManager(
                 new GlobalConstants(),
@@ -29,118 +32,138 @@ class UConfigServiceProvider extends ServiceProvider
             );
         });
 
-        // Registriamo il DAO
-        $this->app->singleton(ConfigDaoInterface::class, function ($app) {
-            return new EloquentConfigDao();
-        });
+        // Bind DAO implementation
+        $this->app->singleton(ConfigDaoInterface::class, fn () => new EloquentConfigDao());
     }
 
     /**
-     * Esegue le azioni di bootstrap dei servizi.
+     * Boot the service provider.
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
-        // Non eseguire nulla se il comando è 'queue:work' o 'queue:listen'
-        $firstArgument = $_SERVER['argv'][1] ?? null;
-        if ($firstArgument === 'queue:work' || $firstArgument === 'queue:listen') {
-            // Log::info('UConfigServiceProvider firstArgument: ' . $firstArgument );
-            return;
-        } else {
-            // Log::info('UConfigServiceProvider Boot' );
-        }
+        if ($this->shouldSkipBoot()) return;
 
-        // Esegue le seguenti azioni solo se l'applicazione è in esecuzione da riga di comando
-        if (app()->runningInConsole()) {
+        if ($this->app->runningInConsole()) {
             $this->handleInitialPublicationMessage();
-            $this->publishTheFilea();
+            $this->publishResources();
         }
 
-        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'uconfig');
-
-        // Carica le rotte pubblicate o quelle predefinite
-        if (file_exists(base_path('routes/uconfig.php'))) {
-            $this->loadRoutesFrom(base_path('routes/uconfig.php'));
-        } else {
-            $this->loadRoutesFrom(__DIR__.'./../../routes/web.php');
-        }
-
-        // Registra il middleware
-        $this->app['router']->aliasMiddleware('uconfig.check_role', CheckConfigManagerRole::class);
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'uconfig');
+        $this->loadRoutes();
+        $this->registerMiddleware();
     }
 
     /**
-     * Gestisce la visualizzazione di un messaggio iniziale durante la pubblicazione delle risorse del pacchetto.
+     * Prevents boot logic during queue operations.
      *
-     * Questo metodo verifica se il comando 'vendor:publish' con il tag 'uconfig-resources' è stato eseguito.
-     * Se sì, controlla lo stato della configurazione 'initial_publication_message' e, se necessario,
-     * visualizza un messaggio informativo e aggiorna lo stato della configurazione.
+     * @return bool
+     */
+    protected function shouldSkipBoot(): bool
+    {
+        $arg = $_SERVER['argv'][1] ?? null;
+        return in_array($arg, ['queue:work', 'queue:listen'], true);
+    }
+
+    /**
+     * Load default or user-defined routes.
      *
      * @return void
      */
-    private function handleInitialPublicationMessage(): void
+    protected function loadRoutes(): void
     {
-        // Recupera gli argomenti passati al comando corrente
-        $arguments = $_SERVER['argv'] ?? [];
+        $customRoute = base_path('routes/uconfig.php');
+        $defaultRoute = __DIR__ . '/../routes/web.php';
 
-        // Verifica se 'vendor:publish' è tra gli argomenti
-        if (in_array('vendor:publish', $arguments)) {
-            // Controlla se è presente un argomento che inizia con '--tag='
-            foreach ($arguments as $arg) {
-                if (strpos($arg, '--tag=') === 0) {
-                    // Estrae i tag specificati e li divide in un array
-                    $tags = explode('=', $arg)[1];
-                    $tagsArray = explode(',', $tags);
+        $this->loadRoutesFrom(file_exists($customRoute) ? $customRoute : $defaultRoute);
+    }
 
-                    // Verifica se 'uconfig-resources' è tra i tag specificati
-                    if (in_array('uconfig-resources', $tagsArray)) {
-                        // Recupera il valore corrente della configurazione 'initial_publication_message'
-                        $showMessage = UConfig::get('initial_publication_message', null);
+    /**
+     * Register the custom role-checking middleware.
+     *
+     * @return void
+     */
+    protected function registerMiddleware(): void
+    {
+        $router = $this->app['router'];
+        $router->aliasMiddleware('uconfig.check_role', CheckConfigManagerRole::class);
+    }
 
-                        // Se il messaggio non è stato ancora mostrato (0 o null)
-                        if ($showMessage == 0 || $showMessage === null) {
-                            // Imposta temporaneamente la configurazione a "0"
-                            UConfig::set('initial_publication_message', "0", 'system');
+    /**
+     * Handle publication message when publishing resources.
+     *
+     * @return void
+     */
+    protected function handleInitialPublicationMessage(): void
+    {
+        $args = $_SERVER['argv'] ?? [];
+        if (!in_array('vendor:publish', $args)) return;
 
-                            // Crea un'istanza per l'output sulla console
-                            $output = new \Symfony\Component\Console\Output\ConsoleOutput();
+        foreach ($args as $arg) {
+            if (str_starts_with($arg, '--tag=')) {
+                $tags = explode(',', explode('=', $arg)[1]);
+                if (!in_array('uconfig-resources', $tags)) continue;
 
-                            // Visualizza il messaggio informativo sulla console
-                            $output->writeln('<info>Attenzione: il file aliases.php esiste già. Assicurati di aggiungere la seguente riga:</info>');
-                            $output->writeln("'UConfig' => UltraProject\\UConfig\\Facades\\UConfig::class,");
-                            $output->writeln('<info>Per ulteriori dettagli, fai riferimento alla documentazione nella sezione Facades: UConfig.</info>');
+                $shown = UConfig::get('initial_publication_message', null);
+                if ($shown === null || $shown == 0) {
+                    UConfig::set('initial_publication_message', '0', 'system');
 
-                            // Aggiorna la configurazione per indicare che il messaggio è stato mostrato
-                            UConfig::set('initial_publication_message', "1", 'system');
+                    $output = new ConsoleOutput();
+                    $output->writeln('<info>Note: aliases.php already exists. Add the following line:</info>');
+                    $output->writeln("'UConfig' => UltraProject\\UConfig\\Facades\\UConfig::class,");
+                    $output->writeln('<info>See documentation under "Facades: UConfig" for more.</info>');
 
-                            // Registra nel log che il messaggio è stato mostrato
-                            Log::info('handleInitialPublicationMessage showMessage dopo: ' . json_encode($showMessage));
-                        }
-                    }
+                    UConfig::set('initial_publication_message', '1', 'system');
+                    Log::info('Initial publication message displayed');
                 }
             }
         }
     }
 
-    private function publishTheFilea(): void
+    /**
+     * Publish all configurable package resources.
+     *
+     * @return void
+     */
+    protected function publishResources(): void
     {
+        $timestamp = now()->format('Y_m_d_His_u');
+
         $this->publishes([
-            // Pubblica i file delle migrazioni
-            __DIR__.'/../database/migrations/create_uconfig_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_table.php'),
-            __DIR__.'/../database/migrations/create_uconfig_versions_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_versions_table.php'),
-            __DIR__.'/../database/migrations/create_uconfig_audit_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_audit_table.php'),
-            // Pubblica il seeder
-            __DIR__.'/../database/seeders/stubs/PermissionSeeder.php.stub' => $this->app->databasePath('seeders/PermissionSeeder.php'),
-            // Pubblica le viste
-            __DIR__.'/../resources/views' => resource_path('views/vendor/uconfig'),
-            // Pubblica il file di configurazione
-            __DIR__.'/../config/uconfig.php' => $this->app->configPath('uconfig.php'),
-            __DIR__.'/../routes/web.php' => $this->app->basePath('routes/uconfig.php'),
-            // Pubblica il file di alias
-            __DIR__.'/../config/aliases.php' => base_path('bootstrap/aliases.php'),
-            // Pubblica le traduzioni
-            __DIR__.'/../resources/lang' => resource_path('lang/vendor/uconfig'),
-        ], 'uconfig-resources'); // Usa un unico tag per tutte le risorse
+            // Migrations
+            __DIR__ . '/../database/migrations/create_uconfig_table.php.stub' =>
+                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_table.php"),
+
+            __DIR__ . '/../database/migrations/create_uconfig_versions_table.php.stub' =>
+                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_versions_table.php"),
+
+            __DIR__ . '/../database/migrations/create_uconfig_audit_table.php.stub' =>
+                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_audit_table.php"),
+
+            // Seeder
+            __DIR__ . '/../database/seeders/stubs/PermissionSeeder.php.stub' =>
+                $this->app->databasePath("seeders/PermissionSeeder.php"),
+
+            // Views
+            __DIR__ . '/../resources/views' =>
+                resource_path('views/vendor/uconfig'),
+
+            // Config
+            __DIR__ . '/../config/uconfig.php' =>
+                $this->app->configPath('uconfig.php'),
+
+            // Routes
+            __DIR__ . '/../routes/web.php' =>
+                base_path('routes/uconfig.php'),
+
+            // Aliases
+            __DIR__ . '/../config/aliases.php' =>
+                base_path('bootstrap/aliases.php'),
+
+            // Translations
+            __DIR__ . '/../resources/lang' =>
+                resource_path('lang/vendor/uconfig'),
+        ], 'uconfig-resources');
     }
 }

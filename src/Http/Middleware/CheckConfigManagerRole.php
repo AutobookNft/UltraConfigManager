@@ -5,32 +5,48 @@ namespace Ultra\UltraConfigManager\Http\Middleware;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * CheckConfigManagerRole
+ *
+ * This middleware ensures that the authenticated user has the appropriate
+ * permission or role to access specific configuration-related routes.
+ *
+ * It supports Spatie permissions if enabled, with a fallback to custom role logic.
+ */
 class CheckConfigManagerRole
 {
+    /**
+     * Handle the incoming request and authorize it based on permissions.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \Closure $next
+     * @param string $permission  The permission string to check (e.g., 'view-config')
+     * @return mixed
+     */
     public function handle($request, Closure $next, $permission)
     {
+        // Ensure the user is authenticated
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         $user = Auth::user();
 
-        // Verifica se l'opzione 'use_spatie_permissions' è attiva
+        // If Spatie permissions are enabled and the user supports the method
         if (config('uconfig.use_spatie_permissions') && method_exists($user, 'hasPermissionTo')) {
-            // Usa il metodo di Spatie per controllare il permesso
             if (!$user->hasPermissionTo($permission)) {
-                abort(403, 'Non hai i permessi per eseguire questa azione.');
+                abort(403, 'You do not have permission to perform this action.');
             }
         } else {
-            // Usa un controllo personalizzato (fallback)
-            // Ad esempio, verifica un campo 'role' nel modello User
+            // Fallback to simple role-based check (e.g., 'role' column on User model)
             $requiredRole = match ($permission) {
                 'view-config' => 'ConfigViewer',
                 'create-config', 'update-config', 'delete-config' => 'ConfigManager',
                 default => 'ConfigManager',
             };
+
             if ($user->role !== $requiredRole) {
-                abort(403, 'Non hai i permessi per eseguire questa azione.');
+                abort(403, 'You do not have permission to perform this action.');
             }
         }
 

@@ -10,31 +10,61 @@ use Ultra\UltraConfigManager\Enums\CategoryEnum;
 use Ultra\UltraLogManager\Facades\UltraLog;
 use Ultra\ErrorManager\Facades\UltraError;
 
+/**
+ * UltraConfigController
+ *
+ * This controller handles HTTP requests related to configuration entries.
+ * It supports creation, edition, deletion, versioning, audit tracking and error handling,
+ * all integrated into the UltraConfigManager ecosystem.
+ */
 class UltraConfigController extends Controller
 {
     protected $uconfig;
     protected $configDao;
 
+    /**
+     * Constructor for the controller.
+     *
+     * @param UltraConfigManager $uconfig       The configuration manager instance.
+     * @param ConfigDaoInterface $configDao     DAO implementation for config storage.
+     */
     public function __construct(UltraConfigManager $uconfig, ConfigDaoInterface $configDao)
     {
         $this->uconfig = $uconfig;
         $this->configDao = $configDao;
     }
 
+    /**
+     * Display the list of all configuration entries.
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         $configs = $this->configDao->getAllConfigs();
         return view('vendor.uconfig.index', compact('configs'));
     }
 
+    /**
+     * Show the form for creating a new configuration entry.
+     *
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
         return view('vendor.uconfig.create');
     }
 
+    /**
+     * Store a new configuration entry, including versioning and auditing.
+     *
+     * @param Request $request     The incoming request.
+     * @param int|null $userId     Optional user ID for audit tracking.
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
     public function store(Request $request, $userId = null)
     {
-        // Validazione degli input
+        // Input validation (manual + formal)
         $key = $request->input('key');
         $value = $request->input('value');
         if (empty($key) || !is_string($key)) {
@@ -65,9 +95,14 @@ class UltraConfigController extends Controller
 
         $this->uconfig->refreshConfigCache($data['key']);
         return redirect()->route('uconfig.index')->with('success', __('uconfig::uconfig.success.created'));
-
     }
 
+    /**
+     * Show the form to edit an existing configuration entry.
+     *
+     * @param int $id  The ID of the configuration.
+     * @return \Illuminate\View\View
+     */
     public function edit($id)
     {
         $config = $this->configDao->getConfigById($id);
@@ -75,11 +110,19 @@ class UltraConfigController extends Controller
         return view('vendor.uconfig.edit', compact('config', 'audits'));
     }
 
+    /**
+     * Update an existing configuration entry, with versioning and audit logging.
+     *
+     * @param Request $request
+     * @param int $id
+     * @param int|null $userId
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
     public function update(Request $request, $id, $userId = null)
     {
         $config = $this->configDao->getConfigById($id);
 
-        // Validazione degli input
+        // Input validation (manual + formal)
         $value = $request->input('value');
         if (empty($value) || !is_string($value)) {
             $exception = new \Exception('Invalid or missing value in request');
@@ -110,9 +153,15 @@ class UltraConfigController extends Controller
 
         $this->uconfig->refreshConfigCache($config->key);
         return redirect()->route('uconfig.index')->with('success', __('uconfig::uconfig.success.updated'));
-
     }
 
+    /**
+     * Delete a configuration entry, while logging and auditing the operation.
+     *
+     * @param int $id
+     * @param int|null $userId
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy($id, $userId = null)
     {
         $config = $this->configDao->getConfigById($id);
@@ -131,6 +180,12 @@ class UltraConfigController extends Controller
         return redirect()->route('uconfig.index')->with('success', 'Configurazione eliminata con successo.');
     }
 
+    /**
+     * Show the audit log for a specific configuration.
+     *
+     * @param int $id
+     * @return \Illuminate\View\View
+     */
     public function audit($id)
     {
         $config = $this->configDao->getConfigById($id);

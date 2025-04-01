@@ -9,10 +9,22 @@ use Ultra\UltraLogManager\Facades\UltraLog;
 use Ultra\ErrorManager\Facades\UltraError;
 use Ultra\ErrorManager\Facades\TestingConditions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * EloquentConfigDao
+ *
+ * This is the default implementation of ConfigDaoInterface, based on Eloquent ORM.
+ * It handles all persistence logic for configuration entries, including versioning and audit trails.
+ */
 class EloquentConfigDao implements ConfigDaoInterface
 {
-    public function getAllConfigs(): \Illuminate\Database\Eloquent\Collection
+    /**
+     * Retrieve all configuration entries.
+     *
+     * @return Collection<UltraConfigModel>
+     */
+    public function getAllConfigs(): Collection
     {
         try {
             return UltraConfigModel::all();
@@ -24,26 +36,25 @@ class EloquentConfigDao implements ConfigDaoInterface
         }
     }
 
+    /**
+     * Retrieve a configuration by its ID.
+     *
+     * Includes simulation for testing condition 'UCM_NOT_FOUND'.
+     *
+     * @param int $id
+     * @return UltraConfigModel
+     */
     public function getConfigById(int $id): UltraConfigModel
     {
         try {
-            // Simulazione errore UCM_NOT_FOUND
             if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', [
-                    'test_condition' => 'UCM_NOT_FOUND',
-                    'id' => $id,
-                ]);
-                $simulatedException = new \Exception("Simulated UCM_NOT_FOUND for testing");
-                return UltraError::handle('UCM_NOT_FOUND', [
-                    'id' => $id,
-                ], $simulatedException);
+                UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['id' => $id]);
+                return UltraError::handle('UCM_NOT_FOUND', ['id' => $id], new \Exception("Simulated UCM_NOT_FOUND"));
             }
 
             return UltraConfigModel::findOrFail($id);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return UltraError::handle('UCM_NOT_FOUND', [
-                'id' => $id,
-            ], $e);
+            return UltraError::handle('UCM_NOT_FOUND', ['id' => $id], $e);
         } catch (\Exception $e) {
             return UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
@@ -53,38 +64,31 @@ class EloquentConfigDao implements ConfigDaoInterface
         }
     }
 
+    /**
+     * Retrieve a configuration entry by its unique key.
+     *
+     * Includes optional test error simulation.
+     *
+     * @param string $key
+     * @return UltraConfigModel
+     */
     public function getConfigByKey(string $key): UltraConfigModel
     {
         try {
-            // Validazione dell'input
-            if (empty($key) || !is_string($key)) {
-                $exception = new \Exception('Invalid or missing key');
-                return UltraError::handle('INVALID_INPUT', [
-                    'param' => 'key',
-                    'value' => $key,
-                ], $exception);
+            if (empty($key)) {
+                return UltraError::handle('INVALID_INPUT', ['param' => 'key'], new \Exception('Missing key'));
             }
 
-            // Simulazione errore UCM_NOT_FOUND
             if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', [
-                    'test_condition' => 'UCM_NOT_FOUND',
-                    'key' => $key,
-                ]);
-                $simulatedException = new \Exception("Simulated UCM_NOT_FOUND for testing");
-                return UltraError::handle('UCM_NOT_FOUND', [
-                    'key' => $key,
-                ], $simulatedException);
+                UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['key' => $key]);
+                return UltraError::handle('UCM_NOT_FOUND', ['key' => $key], new \Exception("Simulated"));
             }
 
-            // Recupera la configurazione per chiave
             $config = UltraConfigModel::where('key', $key)->firstOrFail();
             UltraLog::info('UCM DAO', "Retrieved configuration with key: {$key}");
             return $config;
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return UltraError::handle('UCM_NOT_FOUND', [
-                'key' => $key,
-            ], $e);
+            return UltraError::handle('UCM_NOT_FOUND', ['key' => $key], $e);
         } catch (\Exception $e) {
             return UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
@@ -94,19 +98,18 @@ class EloquentConfigDao implements ConfigDaoInterface
         }
     }
 
+    /**
+     * Create a new configuration entry.
+     *
+     * @param array $data
+     * @return UltraConfigModel
+     */
     public function createConfig(array $data): UltraConfigModel
     {
         try {
-            // Simulazione errore UCM_DUPLICATE_KEY
             if (TestingConditions::isTesting('UCM_DUPLICATE_KEY')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_DUPLICATE_KEY error', [
-                    'test_condition' => 'UCM_DUPLICATE_KEY',
-                    'key' => $data['key'],
-                ]);
-                $simulatedException = new \Exception("Simulated UCM_DUPLICATE_KEY for testing");
-                return UltraError::handle('UCM_DUPLICATE_KEY', [
-                    'key' => $data['key'],
-                ], $simulatedException);
+                UltraLog::info('UCM DAO', 'Simulating duplicate key', ['key' => $data['key']]);
+                return UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], new \Exception("Simulated"));
             }
 
             return DB::transaction(function () use ($data) {
@@ -116,37 +119,27 @@ class EloquentConfigDao implements ConfigDaoInterface
             });
         } catch (\Illuminate\Database\QueryException $e) {
             if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                return UltraError::handle('UCM_DUPLICATE_KEY', [
-                    'key' => $data['key'],
-                ], $e);
+                return UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], $e);
             }
-            return UltraError::handle('UCM_CREATE_FAILED', [
-                'key' => $data['key'],
-                'message' => $e->getMessage(),
-                'operation' => 'createConfig',
-            ], $e);
+            return UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e);
         } catch (\Exception $e) {
-            return UltraError::handle('UCM_CREATE_FAILED', [
-                'key' => $data['key'],
-                'message' => $e->getMessage(),
-                'operation' => 'createConfig',
-            ], $e);
+            return UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e);
         }
     }
 
+    /**
+     * Update a configuration entry.
+     *
+     * @param UltraConfigModel $config
+     * @param array $data
+     * @return UltraConfigModel
+     */
     public function updateConfig(UltraConfigModel $config, array $data): UltraConfigModel
     {
         try {
-            // Simulazione errore UCM_UPDATE_FAILED
             if (TestingConditions::isTesting('UCM_UPDATE_FAILED')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_UPDATE_FAILED error', [
-                    'test_condition' => 'UCM_UPDATE_FAILED',
-                    'key' => $config->key,
-                ]);
-                $simulatedException = new \Exception("Simulated UCM_UPDATE_FAILED for testing");
-                return UltraError::handle('UCM_UPDATE_FAILED', [
-                    'key' => $config->key,
-                ], $simulatedException);
+                UltraLog::info('UCM DAO', 'Simulating update failure', ['key' => $config->key]);
+                return UltraError::handle('UCM_UPDATE_FAILED', ['key' => $config->key], new \Exception("Simulated"));
             }
 
             return DB::transaction(function () use ($config, $data) {
@@ -158,25 +151,23 @@ class EloquentConfigDao implements ConfigDaoInterface
             return UltraError::handle('UCM_UPDATE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-                'operation' => 'updateConfig',
             ], $e);
         }
     }
 
+    /**
+     * Delete a configuration entry.
+     *
+     * @param UltraConfigModel $config
+     * @return void
+     */
     public function deleteConfig(UltraConfigModel $config): void
     {
         try {
-            // Simulazione errore UCM_DELETE_FAILED
             if (TestingConditions::isTesting('UCM_DELETE_FAILED')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_DELETE_FAILED error', [
-                    'test_condition' => 'UCM_DELETE_FAILED',
-                    'key' => $config->key,
-                ]);
-                $simulatedException = new \Exception("Simulated UCM_DELETE_FAILED for testing");
-                UltraError::handle('UCM_DELETE_FAILED', [
-                    'key' => $config->key,
-                ], $simulatedException);
-                return; // Interrompiamo l'esecuzione senza restituire un valore
+                UltraLog::info('UCM DAO', 'Simulating deletion failure', ['key' => $config->key]);
+                UltraError::handle('UCM_DELETE_FAILED', ['key' => $config->key], new \Exception("Simulated"));
+                return;
             }
 
             DB::transaction(function () use ($config) {
@@ -187,11 +178,17 @@ class EloquentConfigDao implements ConfigDaoInterface
             UltraError::handle('UCM_DELETE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-                'operation' => 'deleteConfig',
             ], $e);
         }
     }
 
+    /**
+     * Create a new version of the configuration entry.
+     *
+     * @param UltraConfigModel $config
+     * @param int $version
+     * @return UltraConfigVersion
+     */
     public function createVersion(UltraConfigModel $config, int $version): UltraConfigVersion
     {
         try {
@@ -211,25 +208,39 @@ class EloquentConfigDao implements ConfigDaoInterface
             return UltraError::handle('UCM_CREATE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-                'operation' => 'createVersion',
             ], $e);
         }
     }
 
+    /**
+     * Get the latest version number for the given configuration.
+     *
+     * @param int $configId
+     * @return int
+     */
     public function getLatestVersion(int $configId): int
     {
         try {
             $latestVersion = UltraConfigVersion::where('uconfig_id', $configId)->max('version');
-            return $latestVersion ? $latestVersion : 0;
+            return $latestVersion ?: 0;
         } catch (\Exception $e) {
             return UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
-                'operation' => 'getLatestVersion',
                 'configId' => $configId,
             ], $e);
         }
     }
 
+    /**
+     * Create an audit log entry for a config change.
+     *
+     * @param int $configId
+     * @param string $action
+     * @param string|null $oldValue
+     * @param string|null $newValue
+     * @param int|null $userId
+     * @return UltraConfigAudit
+     */
     public function createAudit(int $configId, string $action, ?string $oldValue, ?string $newValue, ?int $userId): UltraConfigAudit
     {
         try {
@@ -247,20 +258,24 @@ class EloquentConfigDao implements ConfigDaoInterface
         } catch (\Exception $e) {
             return UltraError::handle('UCM_CREATE_FAILED', [
                 'message' => $e->getMessage(),
-                'operation' => 'createAudit',
                 'configId' => $configId,
             ], $e);
         }
     }
 
-    public function getAuditsByConfigId(int $configId): \Illuminate\Database\Eloquent\Collection
+    /**
+     * Retrieve all audit logs for a given configuration.
+     *
+     * @param int $configId
+     * @return Collection<UltraConfigAudit>
+     */
+    public function getAuditsByConfigId(int $configId): Collection
     {
         try {
             return UltraConfigAudit::where('uconfig_id', $configId)->get();
         } catch (\Exception $e) {
             return UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
-                'operation' => 'getAuditsByConfigId',
                 'configId' => $configId,
             ], $e);
         }
