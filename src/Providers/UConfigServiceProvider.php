@@ -10,7 +10,7 @@ use Ultra\UltraConfigManager\Dao\EloquentConfigDao;
 use Ultra\UltraConfigManager\Http\Middleware\CheckConfigManagerRole;
 use Ultra\UltraConfigManager\Services\VersionManager;
 use Ultra\UltraConfigManager\UltraConfigManager;
-
+use Ultra\UltraConfigManager\Facades\UConfig;
 
 class UConfigServiceProvider extends ServiceProvider
 {
@@ -29,13 +29,11 @@ class UConfigServiceProvider extends ServiceProvider
             );
         });
 
-         // Registriamo il DAO
-         $this->app->singleton(ConfigDaoInterface::class, function ($app) {
+        // Registriamo il DAO
+        $this->app->singleton(ConfigDaoInterface::class, function ($app) {
             return new EloquentConfigDao();
         });
-
     }
-
 
     /**
      * Esegue le azioni di bootstrap dei servizi.
@@ -44,21 +42,18 @@ class UConfigServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
         // Non eseguire nulla se il comando è 'queue:work' o 'queue:listen'
         $firstArgument = $_SERVER['argv'][1] ?? null;
         if ($firstArgument === 'queue:work' || $firstArgument === 'queue:listen') {
             // Log::info('UConfigServiceProvider firstArgument: ' . $firstArgument );
             return;
-        }else{
+        } else {
             // Log::info('UConfigServiceProvider Boot' );
         }
 
         // Esegue le seguenti azioni solo se l'applicazione è in esecuzione da riga di comando
         if (app()->runningInConsole()) {
-
             $this->handleInitialPublicationMessage();
-
             $this->publishTheFilea();
         }
 
@@ -80,14 +75,12 @@ class UConfigServiceProvider extends ServiceProvider
      * Se sì, controlla lo stato della configurazione 'initial_publication_message' e, se necessario,
      * visualizza un messaggio informativo e aggiorna lo stato della configurazione.
      *
-     * @param \App\Services\UConfig $uconfig Istanza del servizio UConfig utilizzato per gestire le configurazioni.
      * @return void
      */
     private function handleInitialPublicationMessage(): void
     {
         // Recupera gli argomenti passati al comando corrente
         $arguments = $_SERVER['argv'] ?? [];
-        // $uconfig = $this->app->make('uconfig');
 
         // Verifica se 'vendor:publish' è tra gli argomenti
         if (in_array('vendor:publish', $arguments)) {
@@ -101,12 +94,12 @@ class UConfigServiceProvider extends ServiceProvider
                     // Verifica se 'uconfig-resources' è tra i tag specificati
                     if (in_array('uconfig-resources', $tagsArray)) {
                         // Recupera il valore corrente della configurazione 'initial_publication_message'
-                        $showMessage =  FacadesUConfig::get('initial_publication_message', null);
+                        $showMessage = UConfig::get('initial_publication_message', null);
 
                         // Se il messaggio non è stato ancora mostrato (0 o null)
                         if ($showMessage == 0 || $showMessage === null) {
                             // Imposta temporaneamente la configurazione a "0"
-                            FacadesUConfig::set('initial_publication_message', "0", 'system');
+                            UConfig::set('initial_publication_message', "0", 'system');
 
                             // Crea un'istanza per l'output sulla console
                             $output = new \Symfony\Component\Console\Output\ConsoleOutput();
@@ -117,7 +110,7 @@ class UConfigServiceProvider extends ServiceProvider
                             $output->writeln('<info>Per ulteriori dettagli, fai riferimento alla documentazione nella sezione Facades: UConfig.</info>');
 
                             // Aggiorna la configurazione per indicare che il messaggio è stato mostrato
-                            FacadesUConfig::set('initial_publication_message', "1", 'system');
+                            UConfig::set('initial_publication_message', "1", 'system');
 
                             // Registra nel log che il messaggio è stato mostrato
                             Log::info('handleInitialPublicationMessage showMessage dopo: ' . json_encode($showMessage));
@@ -128,12 +121,15 @@ class UConfigServiceProvider extends ServiceProvider
         }
     }
 
-    private function publishTheFilea(): void{
+    private function publishTheFilea(): void
+    {
         $this->publishes([
             // Pubblica i file delle migrazioni
             __DIR__.'/../database/migrations/create_uconfig_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_table.php'),
             __DIR__.'/../database/migrations/create_uconfig_versions_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_versions_table.php'),
             __DIR__.'/../database/migrations/create_uconfig_audit_table.php.stub' => $this->app->databasePath('migrations/' . now()->format('Y_m_d_His_u') . '_create_uconfig_audit_table.php'),
+            // Pubblica il seeder
+            __DIR__.'/../database/seeders/stubs/PermissionSeeder.php.stub' => $this->app->databasePath('seeders/PermissionSeeder.php'),
             // Pubblica le viste
             __DIR__.'/../resources/views' => resource_path('views/vendor/uconfig'),
             // Pubblica il file di configurazione
@@ -143,5 +139,4 @@ class UConfigServiceProvider extends ServiceProvider
             __DIR__.'/../config/aliases.php' => base_path('bootstrap/aliases.php'),
         ], 'uconfig-resources'); // Usa un unico tag per tutte le risorse
     }
-
 }

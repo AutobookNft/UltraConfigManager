@@ -22,24 +22,6 @@ class GlobalConstants
     public const NO_USER = 0;
 
     /**
-     * Default permission for reading configurations.
-     *
-     * This is the baseline permission required for accessing configuration data.
-     *
-     * @var string
-     */
-    public const DEFAULT_PERMISSION = 'read-config';
-
-    /**
-     * Role identifier for administrative users.
-     *
-     * Users with this role have elevated privileges within the UltraConfigManager system.
-     *
-     * @var string
-     */
-    public const ADMIN_ROLE = 'admin';
-
-    /**
      * Get the value of a constant by name.
      *
      * Provides a safe way to access constants with logging for invalid requests.

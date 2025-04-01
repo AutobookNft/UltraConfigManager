@@ -19,29 +19,43 @@ UConfig è una libreria PHP moderna e flessibile per la gestione delle configura
 
 ## Installazione
 
-1. Installare il pacchetto tramite Composer:
+1. Installa il pacchetto tramite Composer:
 
-   ```bash
-   composer require fabiocherici/uconfig
-   ```
+``` bash
+composer require ultra/ultra-config-manager
 
-2. Pubblicare il file di configurazione e la migration:
+Pubblica le risorse di UCM (migrazioni, seeder, viste, ecc.):
+bash
 
-   ```bash
-   php artisan vendor:publish --provider="Fabio\UConfig\Providers\UConfigServiceProvider" --tag="config"
-   php artisan vendor:publish --provider="Fabio\UConfig\Providers\UConfigServiceProvider" --tag="migrations"
-   ```
+php artisan vendor:publish --tag=uconfig-resources
 
-3. Eseguire le migrazioni:
+UCM dipende da Spatie Laravel Permission per la gestione dei permessi. Assicurati di aver installato e configurato Spatie:
+bash
 
-   ```bash
-   php artisan migrate
-   ```
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag="migrations"
+php artisan migrate
 
-```bash
-composer require fabiocherici/uconfig
-```
+Esegui le migrazioni di UCM per creare le tabelle specifiche (uconfig, uconfig_versions, uconfig_audit):
+bash
 
-## Configurazione
+php artisan migrate
 
-### 
+Esegui il seeder per creare i ruoli e i permessi di UCM:
+bash
+
+php artisan db:seed --class=PermissionSeeder
+
+#### **3.2. Correggere `UConfigServiceProvider.php`**
+
+**Problema**:
+- Uso di `FacadesUConfig` invece di `UConfig`.
+- Import mancante per `UConfig`.
+
+**Azione**:
+- Correggiamo il riferimento a `FacadesUConfig` e aggiungiamo l’import.
+
+**`src/Providers/UConfigServiceProvider.php` (attuale)**:
+
+``` php
+
+
