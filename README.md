@@ -59,6 +59,7 @@ php artisan vendor:publish --tag=uconfig-resources
 ```
 
 If aliases are not auto-discovered, add to `config/app.php`:
+
 ```php
 'UConfig' => UltraProject\UConfig\Facades\UConfig::class,
 ```
@@ -74,11 +75,13 @@ If aliases are not auto-discovered, add to `config/app.php`:
 ## 📦 Resource Publishing
 
 When you run:
+
 ```bash
 php artisan vendor:publish --tag=uconfig-resources
 ```
 
 You publish:
+
 - Migrations:
   - `create_uconfig_table`
   - `create_uconfig_versions_table`
@@ -87,6 +90,26 @@ You publish:
 - Translations
 - `uconfig.php` config file
 - Optional: `aliases.php` to bootstrap folder
+
+## 🔁 Route Autoloading in Laravel 11+
+
+In Laravel 11, custom route files like `routes/uconfig.php` are **not loaded automatically** unless explicitly declared in `bootstrap/app.php`.
+
+**UltraConfigManager handles this internally**.  
+Once the file is published, it is automatically loaded thanks to the following logic inside the service provider:
+
+```php
+$this->app->booted(function () {
+    $router = $this->app->make(\Illuminate\Routing\Router::class);
+    if (file_exists(base_path('routes/uconfig.php'))) {
+        $router->group([], base_path('routes/uconfig.php'));
+    }
+});
+```
+
+✅ No need to manually touch `bootstrap/app.php`  
+✅ The file is optional and safely ignored if not present  
+✅ Can be edited after publishing to customize route behavior
 
 ---
 

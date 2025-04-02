@@ -14,7 +14,7 @@ use Ultra\UltraConfigManager\Services\VersionManager;
 use Ultra\UltraConfigManager\UltraConfigManager;
 use Ultra\UltraConfigManager\Facades\UConfig;
 use Symfony\Component\Console\Output\ConsoleOutput;
-use Illuminate\Foundation\AliasLoader;
+use Illuminate\Routing\Router;
 
 class UConfigServiceProvider extends ServiceProvider
 {
@@ -72,16 +72,18 @@ class UConfigServiceProvider extends ServiceProvider
     }
 
     /**
-     * Load default or user-defined routes.
+     * Load the package's routes.
      *
      * @return void
      */
     protected function loadRoutes(): void
     {
-        $customRoute = base_path('routes/uconfig.php');
-        $defaultRoute = __DIR__ . './../../routes/web.php';
-
-        $this->loadRoutesFrom(file_exists($customRoute) ? $customRoute : $defaultRoute);
+        $this->app->booted(function () {
+            $router = $this->app->make(Router::class);
+            if (file_exists(base_path('routes/uconfig.php'))) {
+                $router->group([], base_path('routes/uconfig.php'));
+            }
+        });
     }
 
     /**
@@ -104,18 +106,11 @@ class UConfigServiceProvider extends ServiceProvider
     {
         $timestamp = now()->format('Y_m_d_His_u');
         $baseDir = dirname(__DIR__, 2); // ← sale da src/Providers a root del pacchetto
-
+        
+        // Publish migrations
+        $this->publishMigrations($timestamp, $baseDir);
+                        
         $this->publishes([
-            // Migrations
-            $baseDir . '/database/migrations/create_uconfig_table.php.stub' =>
-                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_table.php"),
-
-            $baseDir . '/database/migrations/create_uconfig_versions_table.php.stub' =>
-                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_versions_table.php"),
-
-            $baseDir . '/database/migrations/create_uconfig_audit_table.php.stub' =>
-                $this->app->databasePath("migrations/{$timestamp}_create_uconfig_audit_table.php"),
-
             // Seeder
             $baseDir . '/database/seeders/stubs/PermissionSeeder.php.stub' =>
                 $this->app->databasePath("seeders/PermissionSeeder.php"),
@@ -131,15 +126,37 @@ class UConfigServiceProvider extends ServiceProvider
             // Routes
             $baseDir . '/routes/web.php' =>
                 base_path('routes/uconfig.php'),
-
-            // Aliases
-            $baseDir . '/config/aliases.php' =>
-                base_path('bootstrap/aliases.php'),
-
+            
             // Translations
             $baseDir . '/resources/lang' =>
                 resource_path('lang/vendor/uconfig'),
         ], 'uconfig-resources');
     }
 
+    /**
+     * Publish migrations with controlled filename order.
+     *
+     * @param string $timestamp
+     * @param string $baseDir
+     * @return void
+     * 
+     * Publishing migrations with controlled filename order.
+     * UConfig must be created before versions and audit (foreign key dependency).
+     */
+
+    protected function publishMigrations(string $timestamp, string $baseDir): void
+    {
+        $migrations = [
+            '0_create_uconfig_table.php' => 'create_uconfig_table.php.stub',
+            '1_create_uconfig_versions_table.php' => 'create_uconfig_versions_table.php.stub',
+            '2_create_uconfig_audit_table.php' => 'create_uconfig_audit_table.php.stub',
+        ];
+        
+        foreach ($migrations as $orderedName => $stub) {
+            $this->publishes([
+                $baseDir . "/database/migrations/{$stub}" =>
+                    $this->app->databasePath("migrations/{$timestamp}_{$orderedName}"),
+            ], 'uconfig-resources');
+        }
+    }
 }
