@@ -103,41 +103,43 @@ class UConfigServiceProvider extends ServiceProvider
     protected function publishResources(): void
     {
         $timestamp = now()->format('Y_m_d_His_u');
+        $baseDir = dirname(__DIR__, 2); // ← sale da src/Providers a root del pacchetto
 
         $this->publishes([
             // Migrations
-            __DIR__ . './../../database/migrations/create_uconfig_table.php.stub' =>
+            $baseDir . '/database/migrations/create_uconfig_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_table.php"),
 
-            __DIR__ . './../../database/migrations/create_uconfig_versions_table.php.stub' =>
+            $baseDir . '/database/migrations/create_uconfig_versions_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_versions_table.php"),
 
-            __DIR__ . './../../database/migrations/create_uconfig_audit_table.php.stub' =>
+            $baseDir . '/database/migrations/create_uconfig_audit_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_audit_table.php"),
 
             // Seeder
-            __DIR__ . './../../database/seeders/stubs/PermissionSeeder.php.stub' =>
+            $baseDir . '/database/seeders/stubs/PermissionSeeder.php.stub' =>
                 $this->app->databasePath("seeders/PermissionSeeder.php"),
 
             // Views
-            __DIR__ . './../../resources/views' =>
+            $baseDir . '/resources/views' =>
                 resource_path('views/vendor/uconfig'),
 
             // Config
-            __DIR__ . './../../config/uconfig.php' =>
+            $baseDir . '/config/uconfig.php' =>
                 $this->app->configPath('uconfig.php'),
 
             // Routes
-            __DIR__ . './../../routes/web.php' =>
+            $baseDir . '/routes/web.php' =>
                 base_path('routes/uconfig.php'),
 
             // Aliases
-            __DIR__ . './../../config/aliases.php' =>
+            $baseDir . '/config/aliases.php' =>
                 base_path('bootstrap/aliases.php'),
 
             // Translations
-            __DIR__ . './../../resources/lang' =>
+            $baseDir . '/resources/lang' =>
                 resource_path('lang/vendor/uconfig'),
         ], 'uconfig-resources');
     }
+
 }
