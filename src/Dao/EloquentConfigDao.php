@@ -90,11 +90,12 @@ class EloquentConfigDao implements ConfigDaoInterface
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return UltraError::handle('UCM_NOT_FOUND', ['key' => $key], $e);
         } catch (\Exception $e) {
-            return UltraError::handle('UNEXPECTED_ERROR', [
+            UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'operation' => 'getConfigByKey',
                 'key' => $key,
             ], $e);
+            throw $e;
         }
     }
 
