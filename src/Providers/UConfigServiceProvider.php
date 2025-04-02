@@ -48,7 +48,10 @@ class UConfigServiceProvider extends ServiceProvider
     {
         if ($this->shouldSkipBoot()) return;
 
-        $this->loadTranslationsFrom(__DIR__ . './../../resources/lang', 'uconfig');
+        $this->loadTranslationsFrom(__DIR__ . '/../../resources/lang', 'uconfig');
+
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'uconfig');
+
         $this->loadRoutes();
         $this->registerMiddleware();
 
