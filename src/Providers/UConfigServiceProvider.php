@@ -2,6 +2,7 @@
 
 namespace Ultra\UltraConfigManager\Providers;
 
+use Ultra\UltraConfigManager\Console\Commands\UConfigInitializeCommand;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -36,8 +37,6 @@ class UConfigServiceProvider extends ServiceProvider
         // Bind DAO implementation
         $this->app->singleton(ConfigDaoInterface::class, fn () => new EloquentConfigDao());
 
-        $loader = AliasLoader::getInstance();
-        $loader->alias('UltraLog', \Ultra\UltraLogManager\Facades\UltraLog::class);
     }
 
     /**
@@ -49,14 +48,16 @@ class UConfigServiceProvider extends ServiceProvider
     {
         if ($this->shouldSkipBoot()) return;
 
-        if ($this->app->runningInConsole()) {
-            $this->handleInitialPublicationMessage();
-            $this->publishResources();
-        }
-
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'uconfig');
         $this->loadRoutes();
         $this->registerMiddleware();
+
+        if ($this->app->runningInConsole()) {
+            $this->publishResources();
+            $this->commands([
+                UConfigInitializeCommand::class,
+            ]);
+        }
     }
 
     /**
@@ -92,37 +93,6 @@ class UConfigServiceProvider extends ServiceProvider
     {
         $router = $this->app['router'];
         $router->aliasMiddleware('uconfig.check_role', CheckConfigManagerRole::class);
-    }
-
-    /**
-     * Handle publication message when publishing resources.
-     *
-     * @return void
-     */
-    protected function handleInitialPublicationMessage(): void
-    {
-        $args = $_SERVER['argv'] ?? [];
-        if (!in_array('vendor:publish', $args)) return;
-
-        foreach ($args as $arg) {
-            if (str_starts_with($arg, '--tag=')) {
-                $tags = explode(',', explode('=', $arg)[1]);
-                if (!in_array('uconfig-resources', $tags)) continue;
-
-                $shown = UConfig::get('initial_publication_message', null);
-                if ($shown === null || $shown == 0) {
-                    UConfig::set('initial_publication_message', '0', 'system');
-
-                    $output = new ConsoleOutput();
-                    $output->writeln('<info>Note: aliases.php already exists. Add the following line:</info>');
-                    $output->writeln("'UConfig' => UltraProject\\UConfig\\Facades\\UConfig::class,");
-                    $output->writeln('<info>See documentation under "Facades: UConfig" for more.</info>');
-
-                    UConfig::set('initial_publication_message', '1', 'system');
-                    Log::info('Initial publication message displayed');
-                }
-            }
-        }
     }
 
     /**
