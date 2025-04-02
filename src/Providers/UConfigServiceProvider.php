@@ -13,6 +13,7 @@ use Ultra\UltraConfigManager\Services\VersionManager;
 use Ultra\UltraConfigManager\UltraConfigManager;
 use Ultra\UltraConfigManager\Facades\UConfig;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Illuminate\Foundation\AliasLoader;
 
 class UConfigServiceProvider extends ServiceProvider
 {
@@ -34,6 +35,9 @@ class UConfigServiceProvider extends ServiceProvider
 
         // Bind DAO implementation
         $this->app->singleton(ConfigDaoInterface::class, fn () => new EloquentConfigDao());
+
+        $loader = AliasLoader::getInstance();
+        $loader->alias('UltraLog', \Ultra\UltraLogManager\Facades\UltraLog::class);
     }
 
     /**
@@ -74,7 +78,7 @@ class UConfigServiceProvider extends ServiceProvider
     protected function loadRoutes(): void
     {
         $customRoute = base_path('routes/uconfig.php');
-        $defaultRoute = __DIR__ . '/../routes/web.php';
+        $defaultRoute = __DIR__ . './../../routes/web.php';
 
         $this->loadRoutesFrom(file_exists($customRoute) ? $customRoute : $defaultRoute);
     }

@@ -10,6 +10,7 @@ return array(
     'Whoops\\' => array($vendorDir . '/filp/whoops/src/Whoops'),
     'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
     'Ultra\\UltraLogManager\\' => array($vendorDir . '/ultra/ultra-log-manager/src'),
+    'Ultra\\UltraConfigManager\\Tests\\' => array($baseDir . '/tests'),
     'Ultra\\UltraConfigManager\\' => array($baseDir . '/src'),
     'Ultra\\TranslationManager\\' => array($vendorDir . '/ultra/ultra-translation-manager/src'),
     'Ultra\\ErrorManager\\' => array($vendorDir . '/ultra/ultra-error-manager/src'),

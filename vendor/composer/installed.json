@@ -8785,12 +8785,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543"
+                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/82a5c0fa014ff363571f91d65c7dc0775bb28543",
-                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
+                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
                 "shasum": ""
             },
             "require": {
@@ -8801,14 +8801,17 @@
                 "monolog/monolog": "^3.0",
                 "php": "^8.1|^8.2|^8.3"
             },
-            "time": "2025-03-31T17:52:22+00:00",
+            "time": "2025-04-01T21:48:41+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
                     "providers": [
                         "Ultra\\UltraLogManager\\Providers\\UltraLogManagerServiceProvider"
-                    ]
+                    ],
+                    "aliases": {
+                        "UltraLog": "Ultra\\UltraLogManager\\Facades\\UltraLog"
+                    }
                 }
             },
             "installation-source": "dist",

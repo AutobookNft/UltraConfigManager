@@ -61,6 +61,7 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'U' => 
         array (
             'Ultra\\UltraLogManager\\' => 22,
+            'Ultra\\UltraConfigManager\\Tests\\' => 31,
             'Ultra\\UltraConfigManager\\' => 25,
             'Ultra\\TranslationManager\\' => 25,
             'Ultra\\ErrorManager\\' => 19,
@@ -210,6 +211,10 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\UltraLogManager\\' => 
         array (
             0 => __DIR__ . '/..' . '/ultra/ultra-log-manager/src',
+        ),
+        'Ultra\\UltraConfigManager\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/tests',
         ),
         'Ultra\\UltraConfigManager\\' => 
         array (
@@ -6895,6 +6900,11 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\UltraConfigManager\\Models\\User' => __DIR__ . '/../..' . '/src/Models/User.php',
         'Ultra\\UltraConfigManager\\Providers\\UConfigServiceProvider' => __DIR__ . '/../..' . '/src/Providers/UConfigServiceProvider.php',
         'Ultra\\UltraConfigManager\\Services\\VersionManager' => __DIR__ . '/../..' . '/src/Services/VersionManager.php',
+        'Ultra\\UltraConfigManager\\Tests\\Feature\\UConfigFeatureTest' => __DIR__ . '/../..' . '/tests/Feature/UConfigFeatureTest.php',
+        'Ultra\\UltraConfigManager\\Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',
+        'Ultra\\UltraConfigManager\\Tests\\Unit\\GlobalConstantsTest' => __DIR__ . '/../..' . '/tests/Unit/GlobalConstantsTest.php',
+        'Ultra\\UltraConfigManager\\Tests\\Unit\\UltraConfigManagerTest' => __DIR__ . '/../..' . '/tests/Unit/UltraConfigManagerTest.php',
+        'Ultra\\UltraConfigManager\\Tests\\Unit\\VersionManagerTest' => __DIR__ . '/../..' . '/tests/Unit/VersionManagerTest.php',
         'Ultra\\UltraConfigManager\\UltraConfigManager' => __DIR__ . '/../..' . '/src/UltraConfigManager.php',
         'Ultra\\UltraLogManager\\Exceptions\\CustomException' => __DIR__ . '/..' . '/ultra/ultra-log-manager/src/Exceptions/CustomException.php',
         'Ultra\\UltraLogManager\\Facades\\UltraLog' => __DIR__ . '/..' . '/ultra/ultra-log-manager/src/Facades/UltraLog.php',

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9a1731d7e23af725d5cb93ef6440eb6e",
+    "content-hash": "dd3289c687307c57d463bb5defed2faf",
     "packages": [
         {
             "name": "brick/math",
@@ -5527,12 +5527,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543"
+                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/82a5c0fa014ff363571f91d65c7dc0775bb28543",
-                "reference": "82a5c0fa014ff363571f91d65c7dc0775bb28543",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
+                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
                 "shasum": ""
             },
             "require": {
@@ -5549,7 +5549,10 @@
                 "laravel": {
                     "providers": [
                         "Ultra\\UltraLogManager\\Providers\\UltraLogManagerServiceProvider"
-                    ]
+                    ],
+                    "aliases": {
+                        "UltraLog": "Ultra\\UltraLogManager\\Facades\\UltraLog"
+                    }
                 }
             },
             "autoload": {
@@ -5571,7 +5574,7 @@
                 "source": "https://github.com/AutobookNft/UltraLogManager/tree/main",
                 "issues": "https://github.com/AutobookNft/UltraLogManager/issues"
             },
-            "time": "2025-03-31T17:52:22+00:00"
+            "time": "2025-04-01T21:48:41+00:00"
         },
         {
             "name": "ultra/ultra-translation-manager",
@@ -8768,9 +8771,9 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "ultra/ultra-error-manager": 20,
         "ultra/ultra-log-manager": 20,
-        "ultra/ultra-translation-manager": 20,
-        "ultra/ultra-error-manager": 20
+        "ultra/ultra-translation-manager": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

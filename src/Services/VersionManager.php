@@ -25,7 +25,7 @@ class VersionManager
      * @throws \InvalidArgumentException If the config ID is invalid.
      * @throws \Exception If there is a database error.
      */
-    public function getNextVersion(int $configId): int
+    public function getNextVersion(?int $configId): int
     {
         try {
             // Validate that the ID is positive
