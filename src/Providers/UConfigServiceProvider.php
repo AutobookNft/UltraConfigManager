@@ -48,7 +48,7 @@ class UConfigServiceProvider extends ServiceProvider
     {
         if ($this->shouldSkipBoot()) return;
 
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'uconfig');
+        $this->loadTranslationsFrom(__DIR__ . './../../resources/lang', 'uconfig');
         $this->loadRoutes();
         $this->registerMiddleware();
 
@@ -106,37 +106,37 @@ class UConfigServiceProvider extends ServiceProvider
 
         $this->publishes([
             // Migrations
-            __DIR__ . '/../database/migrations/create_uconfig_table.php.stub' =>
+            __DIR__ . './../../database/migrations/create_uconfig_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_table.php"),
 
-            __DIR__ . '/../database/migrations/create_uconfig_versions_table.php.stub' =>
+            __DIR__ . './../../database/migrations/create_uconfig_versions_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_versions_table.php"),
 
-            __DIR__ . '/../database/migrations/create_uconfig_audit_table.php.stub' =>
+            __DIR__ . './../../database/migrations/create_uconfig_audit_table.php.stub' =>
                 $this->app->databasePath("migrations/{$timestamp}_create_uconfig_audit_table.php"),
 
             // Seeder
-            __DIR__ . '/../database/seeders/stubs/PermissionSeeder.php.stub' =>
+            __DIR__ . './../../database/seeders/stubs/PermissionSeeder.php.stub' =>
                 $this->app->databasePath("seeders/PermissionSeeder.php"),
 
             // Views
-            __DIR__ . '/../resources/views' =>
+            __DIR__ . './../../resources/views' =>
                 resource_path('views/vendor/uconfig'),
 
             // Config
-            __DIR__ . '/../config/uconfig.php' =>
+            __DIR__ . './../../config/uconfig.php' =>
                 $this->app->configPath('uconfig.php'),
 
             // Routes
-            __DIR__ . '/../routes/web.php' =>
+            __DIR__ . './../../routes/web.php' =>
                 base_path('routes/uconfig.php'),
 
             // Aliases
-            __DIR__ . '/../config/aliases.php' =>
+            __DIR__ . './../../config/aliases.php' =>
                 base_path('bootstrap/aliases.php'),
 
             // Translations
-            __DIR__ . '/../resources/lang' =>
+            __DIR__ . './../../resources/lang' =>
                 resource_path('lang/vendor/uconfig'),
         ], 'uconfig-resources');
     }
