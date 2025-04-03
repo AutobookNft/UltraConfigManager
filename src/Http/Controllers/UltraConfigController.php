@@ -42,7 +42,7 @@ class UltraConfigController extends Controller
     public function index()
     {
         $configs = $this->configDao->getAllConfigs();
-        return view('vendor.uconfig.index', compact('configs'));
+        return view('uconfig::index', compact('configs'));
     }
 
     /**
@@ -52,7 +52,12 @@ class UltraConfigController extends Controller
      */
     public function create()
     {
-        return view('vendor.uconfig.create');
+    
+        // Prepara i dati per la vista
+        $categories = CategoryEnum::translatedOptions();
+        
+        // Restituisci la vista con i dati
+        return view('uconfig::create', compact('categories'));
     }
 
     /**
@@ -107,7 +112,7 @@ class UltraConfigController extends Controller
     {
         $config = $this->configDao->getConfigById($id);
         $audits = $this->configDao->getAuditsByConfigId($id);
-        return view('vendor.uconfig.edit', compact('config', 'audits'));
+        return view('uconfig::  edit', compact('config', 'audits'));
     }
 
     /**
@@ -190,6 +195,6 @@ class UltraConfigController extends Controller
     {
         $config = $this->configDao->getConfigById($id);
         $audits = $this->configDao->getAuditsByConfigId($id);
-        return view('vendor.uconfig.audit', compact('config', 'audits'));
+        return view('uconfig::audit', compact('config', 'audits'));
     }
 }
