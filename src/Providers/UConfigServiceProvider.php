@@ -83,8 +83,10 @@ class UConfigServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             $router = $this->app->make(Router::class);
+    
             if (file_exists(base_path('routes/uconfig.php'))) {
-                $router->group([], base_path('routes/uconfig.php'));
+                $router->middleware(['web']) // ✅ aggiunto 'web'
+                       ->group(base_path('routes/uconfig.php'));
             }
         });
     }

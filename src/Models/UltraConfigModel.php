@@ -41,6 +41,7 @@ class UltraConfigModel extends Model
      * @var array<string>
      */
     protected $fillable = [
+        'key',
         'value',
         'category',
         'note',
@@ -111,12 +112,43 @@ class UltraConfigModel extends Model
             UltraLog::info('UCM Action', "Updating configuration with key: {$model->key}");
         });
 
-        // Prevent key changes after creation
+        /**
+         * 🔐 Protection of the `key` field
+         *
+         * Hook on model save to prevent changes to the `key` field after creation.
+         *
+         * ✔ During creation (`$model->exists === false`), the `key` can be set.
+         * ❌ After creation, any attempt to modify it triggers a `LogicException`.
+         *
+         * ✅ Goal:
+         *   - Maintain the logical integrity of the configuration.
+         *   - Avoid traceability issues with versioning and auditing.
+         *   - Prevent "silent" changes that could corrupt dependencies.
+         *
+         * 🪵 Logging:
+         *   - Every blocked attempt is logged with `UltraLog::debug()` for traceability.
+         *
+         * 📚 See also:
+         *   - UCMModelTest.php → Automated test to ensure the behavior.
+         *
+         * 🏷️ Tags:
+         *   #laravel #model-hook #immutability #ucm #logic-guard #ultraecosystem
+         */
         static::saving(function ($model) {
-            if ($model->isDirty('key') && !$model->wasRecentlyCreated) {
-                UltraLog::error('UCM Action', "Attempt to modify key of existing configuration: {$model->key}");
+            if (!$model->exists && $model->isDirty('key')) {
+                // Allow setting key on first save
+                return;
+            }
+        
+            if ($model->isDirty('key')) {
+                UltraLog::debug('UCM Model', 'Saving model', [
+                    'exists' => $model->exists,
+                    'dirty' => $model->getDirty(),
+                    'wasRecentlyCreated' => $model->wasRecentlyCreated,
+                ]);
                 throw new \LogicException('Configuration key cannot be modified after creation');
             }
         });
+        
     }
 }

@@ -72,6 +72,7 @@ class UltraConfigController extends Controller
         // Input validation (manual + formal)
         $key = $request->input('key');
         $value = $request->input('value');
+        
         if (empty($key) || !is_string($key)) {
             $exception = new \Exception('Invalid or missing key in request');
             return UltraError::handle('INVALID_INPUT', ['param' => 'key'], $exception);
@@ -112,7 +113,7 @@ class UltraConfigController extends Controller
     {
         $config = $this->configDao->getConfigById($id);
         $audits = $this->configDao->getAuditsByConfigId($id);
-        return view('uconfig::  edit', compact('config', 'audits'));
+        return view('uconfig::edit', compact('config', 'audits'));
     }
 
     /**
