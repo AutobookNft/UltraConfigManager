@@ -3,7 +3,7 @@
         'name' => 'ultra/ultra-config-manager',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'c30311f0ca1378ba67b70dc516c03a037a9e12a6',
+        'reference' => 'afa899fba1055432b07c5f519ab73047bd6a5a6d',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -527,9 +527,9 @@
             'dev_requirement' => true,
         ),
         'nesbot/carbon' => array(
-            'pretty_version' => '3.8.6',
-            'version' => '3.8.6.0',
-            'reference' => 'ff2f20cf83bd4d503720632ce8a426dc747bf7fd',
+            'pretty_version' => '3.9.0',
+            'version' => '3.9.0.0',
+            'reference' => '6d16a8a015166fe54e22c042e0805c5363aef50d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nesbot/carbon',
             'aliases' => array(),
@@ -563,9 +563,9 @@
             'dev_requirement' => true,
         ),
         'nunomaduro/collision' => array(
-            'pretty_version' => 'v8.7.0',
-            'version' => '8.7.0.0',
-            'reference' => '586cb8181a257a2152b6a855ca8d9598878a1a26',
+            'pretty_version' => 'v8.8.0',
+            'version' => '8.8.0.0',
+            'reference' => '4cf9f3b47afff38b139fb79ce54fc71799022ce8',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nunomaduro/collision',
             'aliases' => array(),
@@ -1340,7 +1340,7 @@
         'ultra/ultra-config-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'c30311f0ca1378ba67b70dc516c03a037a9e12a6',
+            'reference' => 'afa899fba1055432b07c5f519ab73047bd6a5a6d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1349,7 +1349,7 @@
         'ultra/ultra-error-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '4eff77394593af5a60ce238e8eafc0c2606dea73',
+            'reference' => 'c3b9750e460085c3413615e79803890380287bfe',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-error-manager',
             'aliases' => array(
