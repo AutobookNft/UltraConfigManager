@@ -1,41 +1,36 @@
 <?php
 
-namespace Ultra\UltraConfigManager\Tests;
+namespace Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
-use Ultra\UltraConfigManager\Providers\UConfigServiceProvider;
+use Orchestra\Testbench\TestCase;
 
-use Illuminate\Foundation\AliasLoader;
-
-abstract class TestCase extends Orchestra
+abstract class UltraTestCase extends TestCase
 {
-    
     protected function getPackageProviders($app)
     {
         return [
-            UConfigServiceProvider::class,
-            \Ultra\UltraLogManager\Providers\UltraLogManagerServiceProvider::class, 
+            \Ultra\UltraLogManager\Providers\UltraLogManagerServiceProvider::class,
+            \Ultra\UltraConfigManager\Providers\UConfigServiceProvider::class,
         ];
     }
 
     protected function defineEnvironment($app)
     {
-        
-        AliasLoader::getInstance()->alias('UltraLog', \Ultra\UltraLogManager\Facades\UltraLog::class);
-        
         $app['config']->set('uconfig.use_spatie_permissions', false);
         $app['config']->set('cache.default', 'array');
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
+        $app['config']->set('database.default', 'sqlite');
+        $app['config']->set('database.connections.sqlite', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
     }
 
-    protected function defineDatabaseMigrations()
+    protected function setUp(): void
     {
-        $this->loadLaravelMigrations();
-
+        parent::setUp();
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-    }
-
-    protected function getEnvironmentSetUp($app)
-    {
-        // eventualmente setup custom
     }
 }
