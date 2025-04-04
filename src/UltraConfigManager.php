@@ -444,7 +444,7 @@ class UltraConfigManager
     public function validateConstant(string $name): void
     {
         if (!defined("self::{$name}")) {
-            UltraLog::warning("Invalid constant: {$name}");
+            UltraLog::warning('UCM Validation', "Invalid constant: {$name}");
             throw new \InvalidArgumentException("Invalid constant: {$name}");
         }
     }
