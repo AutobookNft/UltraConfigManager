@@ -59,6 +59,15 @@ class UltraConfigModel extends Model
     ];
 
     /**
+     * Summary of newFactory
+     * @return \Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory
+     */
+    protected static function newFactory()
+    {
+        return \Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory::new();
+    }
+
+    /**
      * Get the versions associated with this configuration.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
