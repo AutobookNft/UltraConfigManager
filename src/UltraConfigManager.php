@@ -163,6 +163,17 @@ class UltraConfigManager
         return $configArray;
     }
 
+    /**
+     * Determine if a given config key exists.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function has(string $key): bool
+    {
+        return $this->get($key, null, true) !== null;
+    }
+
 
     /**
      * Retrieve a configuration value.
@@ -171,22 +182,34 @@ class UltraConfigManager
      *
      * @param string $key The configuration key to retrieve.
      * @param mixed $default The default value if the key is not found.
+     * @param bool $silent If true, suppresses logging for missing keys or tables.
      * @return mixed The configuration value or default.
      */
-    public function get(string $key, mixed $default = null): mixed
+    public function get(string $key, mixed $default = null, bool $silent = false): mixed
     {
         if (!Schema::hasTable('uconfig')) {
-            UltraLog::warning('UCM Action', "The 'uconfig' table does not exist. Returning default: " . json_encode($default));
+            if (!$silent) {
+                UltraLog::warning('UCM Action', "The 'uconfig' table does not exist. Returning default: " . json_encode($default));
+            }
             return $default;
         }
 
         if (empty($this->config)) {
             $this->config = Cache::get(self::CACHE_KEY, []);
-            UltraLog::debug('UCM Action', "Loaded configurations from cache for key: {$key}");
+            if (!$silent) {
+                UltraLog::debug('UCM Action', "Loaded configurations from cache for key: {$key}");
+            }
         }
 
-        return $this->config[$key]['value'] ?? $default;
+        $value = $this->config[$key]['value'] ?? $default;
+
+        if ($value === $default && !$silent) {
+            UltraLog::info('UCM Action', "Config key '{$key}' not found. Using default: " . json_encode($default));
+        }
+
+        return $value;
     }
+
 
 
     /**
