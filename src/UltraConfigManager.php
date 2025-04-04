@@ -433,4 +433,20 @@ class UltraConfigManager
     {
         $this->config = UltraConfigModel::all()->keyBy('key')->toArray();
     }
+
+    /**
+     * Validate that the given constant is defined in the system.
+     *
+     * @param  string  $name
+     * @throws \InvalidArgumentException if the constant is not defined
+     * @return void
+     */
+    public function validateConstant(string $name): void
+    {
+        if (!defined("self::{$name}")) {
+            UltraLog::warning("Invalid constant: {$name}");
+            throw new \InvalidArgumentException("Invalid constant: {$name}");
+        }
+    }
+
 }
