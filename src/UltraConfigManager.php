@@ -210,8 +210,6 @@ class UltraConfigManager
         return $value;
     }
 
-
-
     /**
      * Set a configuration value.
      *
@@ -424,5 +422,15 @@ class UltraConfigManager
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * Reloads the configuration cache directly from the database.
+     *
+     * Useful for tests or emergency reboots.
+     */
+    public function reload(): void
+    {
+        $this->config = UltraConfigModel::all()->keyBy('key')->toArray();
     }
 }
