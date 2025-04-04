@@ -6908,7 +6908,6 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\UltraConfigManager\\Providers\\UConfigServiceProvider' => __DIR__ . '/../..' . '/src/Providers/UConfigServiceProvider.php',
         'Ultra\\UltraConfigManager\\Services\\VersionManager' => __DIR__ . '/../..' . '/src/Services/VersionManager.php',
         'Ultra\\UltraConfigManager\\Tests\\Feature\\UConfigFeatureTest' => __DIR__ . '/../..' . '/tests/Feature/UConfigFeatureTest.php',
-        'Ultra\\UltraConfigManager\\Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',
         'Ultra\\UltraConfigManager\\Tests\\Unit\\GlobalConstantsTest' => __DIR__ . '/../..' . '/tests/Unit/GlobalConstantsTest.php',
         'Ultra\\UltraConfigManager\\Tests\\Unit\\UltraConfigManagerTest' => __DIR__ . '/../..' . '/tests/Unit/UltraConfigManagerTest.php',
         'Ultra\\UltraConfigManager\\Tests\\Unit\\VersionManagerTest' => __DIR__ . '/../..' . '/tests/Unit/VersionManagerTest.php',

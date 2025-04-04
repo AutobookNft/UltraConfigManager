@@ -6346,7 +6346,6 @@ return array(
     'Ultra\\UltraConfigManager\\Providers\\UConfigServiceProvider' => $baseDir . '/src/Providers/UConfigServiceProvider.php',
     'Ultra\\UltraConfigManager\\Services\\VersionManager' => $baseDir . '/src/Services/VersionManager.php',
     'Ultra\\UltraConfigManager\\Tests\\Feature\\UConfigFeatureTest' => $baseDir . '/tests/Feature/UConfigFeatureTest.php',
-    'Ultra\\UltraConfigManager\\Tests\\TestCase' => $baseDir . '/tests/TestCase.php',
     'Ultra\\UltraConfigManager\\Tests\\Unit\\GlobalConstantsTest' => $baseDir . '/tests/Unit/GlobalConstantsTest.php',
     'Ultra\\UltraConfigManager\\Tests\\Unit\\UltraConfigManagerTest' => $baseDir . '/tests/Unit/UltraConfigManagerTest.php',
     'Ultra\\UltraConfigManager\\Tests\\Unit\\VersionManagerTest' => $baseDir . '/tests/Unit/VersionManagerTest.php',
