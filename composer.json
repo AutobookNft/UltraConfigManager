@@ -27,7 +27,8 @@
     "autoload": {
         "psr-4": {
             "Ultra\\UltraConfigManager\\": "src/",
-            "Ultra\\UltraConfigManager\\Tests\\": "tests/"
+            "Ultra\\UltraConfigManager\\Tests\\": "tests/",
+            "Ultra\\UltraConfigManager\\Database\\Factories\\": "database/factories/"
         }
     },
     "extra": {

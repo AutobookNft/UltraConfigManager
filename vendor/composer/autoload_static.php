@@ -62,6 +62,7 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         array (
             'Ultra\\UltraLogManager\\' => 22,
             'Ultra\\UltraConfigManager\\Tests\\' => 31,
+            'Ultra\\UltraConfigManager\\Database\\Factories\\' => 44,
             'Ultra\\UltraConfigManager\\' => 25,
             'Ultra\\TranslationManager\\' => 25,
             'Ultra\\ErrorManager\\' => 19,
@@ -215,6 +216,10 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\UltraConfigManager\\Tests\\' => 
         array (
             0 => __DIR__ . '/../..' . '/tests',
+        ),
+        'Ultra\\UltraConfigManager\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/database/factories',
         ),
         'Ultra\\UltraConfigManager\\' => 
         array (
@@ -6887,9 +6892,11 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\TranslationManager\\Providers\\UltraTranslationServiceProvider' => __DIR__ . '/..' . '/ultra/ultra-translation-manager/src/Providers/UltraTranslationServiceProvider.php',
         'Ultra\\TranslationManager\\TranslationManager' => __DIR__ . '/..' . '/ultra/ultra-translation-manager/src/TranslationManager.php',
         'Ultra\\UltraConfigManager\\Casts\\EncryptedCast' => __DIR__ . '/../..' . '/src/Casts/EncryptedCast.php',
+        'Ultra\\UltraConfigManager\\Console\\Commands\\UConfigInitializeCommand' => __DIR__ . '/../..' . '/src/Console/Commands/UConfigInitializeCommand.php',
         'Ultra\\UltraConfigManager\\Constants\\GlobalConstants' => __DIR__ . '/../..' . '/src/Constants/GlobalConstants.php',
         'Ultra\\UltraConfigManager\\Dao\\ConfigDaoInterface' => __DIR__ . '/../..' . '/src/Dao/ConfigDaoInterface.php',
         'Ultra\\UltraConfigManager\\Dao\\EloquentConfigDao' => __DIR__ . '/../..' . '/src/Dao/EloquentConfigDao.php',
+        'Ultra\\UltraConfigManager\\Database\\Factories\\UltraConfigModelFactory' => __DIR__ . '/../..' . '/database/factories/UltraConfigModelFactory.php',
         'Ultra\\UltraConfigManager\\Enums\\CategoryEnum' => __DIR__ . '/../..' . '/src/Enums/CategoryEnum.php',
         'Ultra\\UltraConfigManager\\Facades\\UConfig' => __DIR__ . '/../..' . '/src/Facades/UConfig.php',
         'Ultra\\UltraConfigManager\\Http\\Controllers\\UltraConfigController' => __DIR__ . '/../..' . '/src/Http/Controllers/UltraConfigController.php',

@@ -7,6 +7,7 @@ use Ultra\UltraConfigManager\Enums\CategoryEnum;
 use Ultra\UltraLogManager\Facades\UltraLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * UltraConfigModel - Represents a configuration entry in the Ultra ecosystem.
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class UltraConfigModel extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
 
     /**
      * The table associated with the model.
