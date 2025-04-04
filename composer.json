@@ -38,7 +38,8 @@
             ],
             "aliases": {
                 "UltraConfig": "Ultra\\UltraConfigManager\\Facades\\UltraConfig",
-                "UltraError": "Ultra\\ErrorManager\\Facades\\UltraError"
+                "UltraError": "Ultra\\ErrorManager\\Facades\\UltraError",
+                "TestingConditions": "Ultra\\ErrorManager\\Facades\\TestingConditions"
             }
         }
     },
