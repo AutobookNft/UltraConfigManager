@@ -435,7 +435,7 @@ class UltraConfigManager
     }
 
     /**
-     * Validate that the given constant is defined in the system.
+     * Validate that the given constant is defined in GlobalConstants.
      *
      * @param  string  $name
      * @throws \InvalidArgumentException if the constant is not defined
@@ -443,7 +443,7 @@ class UltraConfigManager
      */
     public function validateConstant(string $name): void
     {
-        if (!defined("self::{$name}")) {
+        if (!defined(GlobalConstants::class . '::' . $name)) {
             UltraLog::warning('UCM Validation', "Invalid constant: {$name}");
             throw new \InvalidArgumentException("Invalid constant: {$name}");
         }
