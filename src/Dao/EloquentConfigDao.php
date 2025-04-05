@@ -29,12 +29,15 @@ class EloquentConfigDao implements ConfigDaoInterface
         try {
             return UltraConfigModel::all();
         } catch (\Exception $e) {
-            return UltraError::handle('UNEXPECTED_ERROR', [
+            UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'operation' => 'getAllConfigs',
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in getAllConfigs');
     }
+
 
     /**
      * Retrieve a configuration by its ID.
@@ -50,23 +53,24 @@ class EloquentConfigDao implements ConfigDaoInterface
     public function getConfigById(int $id): UltraConfigModel
     {
         if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
-            UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['id' => $id]);
-            throw UltraError::handle('UCM_NOT_FOUND', ['id' => $id], new \Exception("Simulated UCM_NOT_FOUND"));
+            UltraError::handle('UCM_NOT_FOUND', ['id' => $id], new \Exception("Simulated UCM_NOT_FOUND"), true);
         }
 
         try {
             return UltraConfigModel::findOrFail($id);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            throw UltraError::handle('UCM_NOT_FOUND', ['id' => $id], $e);
+            UltraError::handle('UCM_NOT_FOUND', ['id' => $id], $e, true);
         } catch (\Exception $e) {
-            throw UltraError::handle('UNEXPECTED_ERROR', [
+            UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'operation' => 'getConfigById',
                 'id' => $id,
-            ], $e);
+            ], $e, true);
         }
-    }
 
+        // Chiusura esplicita per completezza e analizzatori statici
+        throw new \LogicException('Unreachable code in getConfigById');
+    }
 
     /**
      * Retrieve a configuration entry by its unique key.
@@ -114,7 +118,7 @@ class EloquentConfigDao implements ConfigDaoInterface
         try {
             if (TestingConditions::isTesting('UCM_DUPLICATE_KEY')) {
                 UltraLog::info('UCM DAO', 'Simulating duplicate key', ['key' => $data['key']]);
-                return UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], new \Exception("Simulated"));
+                UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], new \Exception("Simulated"), true);
             }
 
             return DB::transaction(function () use ($data) {
@@ -124,15 +128,20 @@ class EloquentConfigDao implements ConfigDaoInterface
             });
         } catch (\Illuminate\Database\QueryException $e) {
             if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                return UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], $e);
+                UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], $e, true);
             }
-            return UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e);
+
+            UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e, true);
         } catch (\Exception $e) {
-            return UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e);
+            UltraError::handle('UCM_CREATE_FAILED', ['key' => $data['key'], 'message' => $e->getMessage()], $e, true);
         }
+
+        // Safeguard: all code paths must return or throw
+        throw new \LogicException('Unreachable code in createConfig');
     }
 
-    /**
+
+   /**
      * Update a configuration entry.
      *
      * @param UltraConfigModel $config
@@ -144,7 +153,7 @@ class EloquentConfigDao implements ConfigDaoInterface
         try {
             if (TestingConditions::isTesting('UCM_UPDATE_FAILED')) {
                 UltraLog::info('UCM DAO', 'Simulating update failure', ['key' => $config->key]);
-                return UltraError::handle('UCM_UPDATE_FAILED', ['key' => $config->key], new \Exception("Simulated"));
+                UltraError::handle('UCM_UPDATE_FAILED', ['key' => $config->key], new \Exception("Simulated"), true);
             }
 
             return DB::transaction(function () use ($config, $data) {
@@ -153,11 +162,13 @@ class EloquentConfigDao implements ConfigDaoInterface
                 return $config;
             });
         } catch (\Exception $e) {
-            return UltraError::handle('UCM_UPDATE_FAILED', [
+            UltraError::handle('UCM_UPDATE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in updateConfig');
     }
 
     /**
@@ -171,8 +182,7 @@ class EloquentConfigDao implements ConfigDaoInterface
         try {
             if (TestingConditions::isTesting('UCM_DELETE_FAILED')) {
                 UltraLog::info('UCM DAO', 'Simulating deletion failure', ['key' => $config->key]);
-                UltraError::handle('UCM_DELETE_FAILED', ['key' => $config->key], new \Exception("Simulated"));
-                return;
+                UltraError::handle('UCM_DELETE_FAILED', ['key' => $config->key], new \Exception("Simulated"), true);
             }
 
             DB::transaction(function () use ($config) {
@@ -183,11 +193,13 @@ class EloquentConfigDao implements ConfigDaoInterface
             UltraError::handle('UCM_DELETE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in deleteConfig');
     }
 
-    /**
+   /**
      * Create a new version of the configuration entry.
      *
      * @param UltraConfigModel $config
@@ -210,14 +222,17 @@ class EloquentConfigDao implements ConfigDaoInterface
                 return $versionRecord;
             });
         } catch (\Exception $e) {
-            return UltraError::handle('UCM_CREATE_FAILED', [
+            UltraError::handle('UCM_CREATE_FAILED', [
                 'key' => $config->key,
                 'message' => $e->getMessage(),
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in createVersion');
     }
 
-    /**
+
+   /**
      * Get the latest version number for the given configuration.
      *
      * @param int $configId
@@ -229,12 +244,15 @@ class EloquentConfigDao implements ConfigDaoInterface
             $latestVersion = UltraConfigVersion::where('uconfig_id', $configId)->max('version');
             return $latestVersion ?: 0;
         } catch (\Exception $e) {
-            return UltraError::handle('UNEXPECTED_ERROR', [
+            UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'configId' => $configId,
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in getLatestVersion');
     }
+
 
     /**
      * Create an audit log entry for a config change.
@@ -261,14 +279,17 @@ class EloquentConfigDao implements ConfigDaoInterface
                 return $audit;
             });
         } catch (\Exception $e) {
-            return UltraError::handle('UCM_CREATE_FAILED', [
+            UltraError::handle('UCM_CREATE_FAILED', [
                 'message' => $e->getMessage(),
                 'configId' => $configId,
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in createAudit');
     }
 
-    /**
+
+   /**
      * Retrieve all audit logs for a given configuration.
      *
      * @param int $configId
@@ -279,10 +300,13 @@ class EloquentConfigDao implements ConfigDaoInterface
         try {
             return UltraConfigAudit::where('uconfig_id', $configId)->get();
         } catch (\Exception $e) {
-            return UltraError::handle('UNEXPECTED_ERROR', [
+            UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'configId' => $configId,
-            ], $e);
+            ], $e, true);
         }
+
+        throw new \LogicException('Unreachable code in getAuditsByConfigId');
     }
+
 }
