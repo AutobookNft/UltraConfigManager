@@ -3,7 +3,7 @@
         'name' => 'ultra/ultra-config-manager',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'b91f62bdd667269c010cde2c95a911d875413f2f',
+        'reference' => '0715b2ccf36cfc29b679a7a63efe50f97990fd4b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1340,7 +1340,7 @@
         'ultra/ultra-config-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'b91f62bdd667269c010cde2c95a911d875413f2f',
+            'reference' => '0715b2ccf36cfc29b679a7a63efe50f97990fd4b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1360,7 +1360,7 @@
         'ultra/ultra-log-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'fa41c058948d87db6d8490d8f2d1b1158bc73b4b',
+            'reference' => 'fd4b222fdc0c4e6c330081cbc4488a98166e1b91',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-log-manager',
             'aliases' => array(

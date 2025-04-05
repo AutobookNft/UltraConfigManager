@@ -8786,12 +8786,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b"
+                "reference": "fd4b222fdc0c4e6c330081cbc4488a98166e1b91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
-                "reference": "fa41c058948d87db6d8490d8f2d1b1158bc73b4b",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/fd4b222fdc0c4e6c330081cbc4488a98166e1b91",
+                "reference": "fd4b222fdc0c4e6c330081cbc4488a98166e1b91",
                 "shasum": ""
             },
             "require": {
@@ -8802,7 +8802,7 @@
                 "monolog/monolog": "^3.0",
                 "php": "^8.1|^8.2|^8.3"
             },
-            "time": "2025-04-01T21:48:41+00:00",
+            "time": "2025-04-05T15:53:14+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
