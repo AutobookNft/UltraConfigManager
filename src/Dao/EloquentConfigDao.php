@@ -115,12 +115,12 @@ class EloquentConfigDao implements ConfigDaoInterface
      */
     public function createConfig(array $data): UltraConfigModel
     {
+        
+        if (TestingConditions::isTesting('UCM_DUPLICATE_KEY')) {
+            UltraLog::info('UCM DAO', 'Simulating duplicate key', ['key' => $data['key']]);
+            UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], new \Exception("Simulated"), true);
+        }
         try {
-            if (TestingConditions::isTesting('UCM_DUPLICATE_KEY')) {
-                UltraLog::info('UCM DAO', 'Simulating duplicate key', ['key' => $data['key']]);
-                UltraError::handle('UCM_DUPLICATE_KEY', ['key' => $data['key']], new \Exception("Simulated"), true);
-            }
-
             return DB::transaction(function () use ($data) {
                 $config = UltraConfigModel::create($data);
                 UltraLog::info('UCM DAO', "Created configuration with key: {$config->key}");
