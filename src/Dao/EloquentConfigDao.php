@@ -304,25 +304,44 @@ class EloquentConfigDao implements ConfigDaoInterface
         throw new \LogicException('Unreachable code in createAudit');
     }
 
-
-   /**
-     * Retrieve all audit logs for a given configuration.
+    /**
+     * Retrieve all audits for a given configuration.
      *
-     * @param int $configId
-     * @return Collection<UltraConfigAudit>
+     * If no audits are found, this method delegates error handling to UltraErrorManager,
+     * which may interrupt flow by throwing an UltraErrorException.
+     *
+     * Note: Although this method does not explicitly throw, it may do so internally
+     * through the UltraError system. Callers should be prepared to handle exceptions.
+     *
+     * @param int $configId Configuration identifier
+     * @return Collection<UltraConfigAudit> Collection of audit records
      */
     public function getAuditsByConfigId(int $configId): Collection
     {
         try {
-            return UltraConfigAudit::where('uconfig_id', $configId)->get();
+            $audits = DB::table('uconfig_audits')
+                ->where('uconfig_id', $configId)
+                ->orderBy('created_at')
+                ->get();
+
+            if ($audits->isEmpty()) {
+                UltraError::handle('UCM_AUDIT_NOT_FOUND', [
+                    'config_id' => $configId,
+                ], new \Exception("No audits found"), true);
+            }
+
+            return $audits;
         } catch (\Exception $e) {
             UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
-                'configId' => $configId,
+                'operation' => 'getAuditsByConfigId',
+                'config_id' => $configId,
             ], $e, true);
         }
 
         throw new \LogicException('Unreachable code in getAuditsByConfigId');
     }
+
+
 
 }

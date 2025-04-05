@@ -5,8 +5,7 @@ namespace Ultra\UltraConfigManager\Dao;
 use Ultra\UltraConfigManager\Models\UltraConfigModel;
 use Ultra\UltraConfigManager\Models\UltraConfigVersion;
 use Ultra\UltraConfigManager\Models\UltraConfigAudit;
-use Illuminate\Database\Eloquent\Collection;
-
+use Illuminate\Support\Collection;
 /**
  * ConfigDaoInterface
  *
