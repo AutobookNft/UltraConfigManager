@@ -232,26 +232,42 @@ class EloquentConfigDao implements ConfigDaoInterface
     }
 
 
-   /**
+    /**
      * Get the latest version number for the given configuration.
      *
-     * @param int $configId
-     * @return int
+     * If no version exists for the given configId, the internal error manager
+     * will handle the error and may throw an UltraErrorException.
+     *
+     * Note: Although this method does not explicitly throw exceptions, it relies
+     * on UltraError::handle(..., throw: true), which may interrupt flow.
+     * Make sure to catch exceptions when calling this method if error handling is critical.
+     *
+     * @param int $configId Configuration identifier
+     * @return int Latest version number, or 0 if none found
      */
     public function getLatestVersion(int $configId): int
     {
         try {
             $latestVersion = UltraConfigVersion::where('uconfig_id', $configId)->max('version');
-            return $latestVersion ?: 0;
+
+            if (is_null($latestVersion)) {
+                UltraError::handle('UCM_VERSION_NOT_FOUND', [
+                    'config_id' => $configId,
+                ], new \Exception("No version found"), true);
+            }
+
+            return $latestVersion;
         } catch (\Exception $e) {
             UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
-                'configId' => $configId,
+                'operation' => 'getLatestVersion',
+                'config_id' => $configId,
             ], $e, true);
         }
 
         throw new \LogicException('Unreachable code in getLatestVersion');
     }
+
 
 
     /**
