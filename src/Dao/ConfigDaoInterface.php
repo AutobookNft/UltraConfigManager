@@ -56,12 +56,22 @@ interface ConfigDaoInterface
     public function updateConfig(UltraConfigModel $config, array $data): UltraConfigModel;
 
     /**
-     * Delete a configuration entry.
+     * Soft-delete a configuration entry and register an audit log entry for traceability.
      *
-     * @param UltraConfigModel $config
+     * This method permanently removes the config entry from active use by marking it as deleted,
+     * while also persisting an audit record to ensure observability and accountability.
+     *
+     * It should be used any time a configuration is removed, regardless of the origin of the call 
+     * (Controller, CLI, Job, Seeder).
+     *
+     * @param UltraConfigModel $config The configuration model to be deleted.
+     * @param int|null $userId The ID of the user performing the deletion. If null, it falls back to a system-defined constant.
+     *
      * @return void
+     *
+     * @throws \Exception If the operation fails or the audit log cannot be recorded.
      */
-    public function deleteConfig(UltraConfigModel $config): void;
+    public function deleteConfig(UltraConfigModel $config, ?int $userId = null): void;
 
     /**
      * Create a new version of a configuration.

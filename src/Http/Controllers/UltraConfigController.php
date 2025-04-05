@@ -162,16 +162,29 @@ class UltraConfigController extends Controller
     }
 
     /**
-     * Delete a configuration entry, while logging and auditing the operation.
+     * Delete a configuration entry from the system.
      *
-     * @param int $id
-     * @param int|null $userId
+     * This action will:
+     * - Retrieve the configuration by ID
+     * - Log the deletion request
+     * - Delegate to the Config DAO for deletion and audit logging
+     * - Refresh the config cache for the deleted key
+     * - Return the user to the index with a success message
+     *
+     * This method does not handle authorization directly — it assumes middleware or gate protection upstream.
+     *
+     * @param int $id The ID of the configuration entry to be deleted.
+     * @param int|null $userId Optional override for the user performing the deletion. If null, Auth::id() will be used implicitly.
      * @return \Illuminate\Http\RedirectResponse
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException If the configuration ID does not exist.
+     * @throws \Throwable If the deletion or audit creation fails at the DAO level.
+     *
+     * @see \Ultra\UltraConfigManager\Dao\ConfigDaoInterface::deleteConfig
      */
     public function destroy($id, $userId = null)
     {
         $config = $this->configDao->getConfigById($id);
-        $oldValue = $config->value;
 
         UltraLog::info('UCM Controller', 'destroy: deleting configuration', [
             'key' => $config->key,
@@ -179,12 +192,15 @@ class UltraConfigController extends Controller
             'user_id' => $userId ?? 'N/A',
         ]);
 
-        $this->configDao->createAudit($config->id, 'deleted', $oldValue, null, $userId);
-        $this->configDao->deleteConfig($config);
+        $this->configDao->deleteConfig($config, $userId);
 
         $this->uconfig->refreshConfigCache($config->key);
-        return redirect()->route('uconfig.index')->with('success', 'Configurazione eliminata con successo.');
+
+        return redirect()
+            ->route('uconfig.index')
+            ->with('success', 'Configurazione eliminata con successo.');
     }
+
 
     /**
      * Show the audit log for a specific configuration.

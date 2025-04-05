@@ -2,6 +2,7 @@
 
 namespace Ultra\UltraConfigManager\Dao;
 
+use Ultra\UltraConfigManager\Constants\GlobalConstants;
 use Ultra\UltraConfigManager\Models\UltraConfigModel;
 use Ultra\UltraConfigManager\Models\UltraConfigVersion;
 use Ultra\UltraConfigManager\Models\UltraConfigAudit;
@@ -172,21 +173,50 @@ class EloquentConfigDao implements ConfigDaoInterface
     }
 
     /**
-     * Delete a configuration entry.
+     * Permanently marks a configuration record as deleted (soft-delete) 
+     * and registers an audit log entry for the operation.
      *
-     * @param UltraConfigModel $config
+     * This method should be used any time a config key is removed from the system,
+     * whether through the UI, CLI or automated processes.
+     * 
+     * It guarantees the consistency of business logic by:
+     * - wrapping the deletion and audit in a DB transaction,
+     * - logging the action for observability,
+     * - ensuring traceability through user ID (if available).
+     *
+     * ❗This method assumes the configuration model exists and is valid.
+     * ❗Audit creation is mandatory and is handled internally.
+     *
+     * @param UltraConfigModel $config The configuration model to be deleted.
+     * @param int|null $userId The ID of the user performing the action. If null, defaults to GlobalConstants::NO_USER.
+     *
      * @return void
+     *
+     * @throws \Exception If the deletion or audit logging fails.
+     *
+     * @see createAudit() For how the audit entry is structured.
+     * @see UltraConfigAudit For audit model schema.
      */
-    public function deleteConfig(UltraConfigModel $config): void
+    public function deleteConfig(UltraConfigModel $config, ?int $userId = null): void
     {
         try {
             if (TestingConditions::isTesting('UCM_DELETE_FAILED')) {
                 UltraLog::info('UCM DAO', 'Simulating deletion failure', ['key' => $config->key]);
                 UltraError::handle('UCM_DELETE_FAILED', ['key' => $config->key], new \Exception("Simulated"), true);
             }
-
-            DB::transaction(function () use ($config) {
+    
+            DB::transaction(function () use ($config, $userId) {
+                $oldValue = $config->value;
                 $config->delete();
+    
+                $this->createAudit(
+                    configId: $config->id,
+                    action: 'deleted',
+                    oldValue: $oldValue,
+                    newValue: null,
+                    userId: $userId ?? GlobalConstants::NO_USER
+                );
+    
                 UltraLog::info('UCM DAO', "Deleted configuration with key: {$config->key}");
             });
         } catch (\Exception $e) {
@@ -195,7 +225,7 @@ class EloquentConfigDao implements ConfigDaoInterface
                 'message' => $e->getMessage(),
             ], $e, true);
         }
-
+    
         throw new \LogicException('Unreachable code in deleteConfig');
     }
 
