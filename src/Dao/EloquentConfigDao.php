@@ -39,30 +39,34 @@ class EloquentConfigDao implements ConfigDaoInterface
     /**
      * Retrieve a configuration by its ID.
      *
-     * Includes simulation for testing condition 'UCM_NOT_FOUND'.
+     * If TestingConditions::isTesting('UCM_NOT_FOUND') is enabled,
+     * or if the config is not found in the database, the call will
+     * be intercepted by UltraError::handle(), which will throw
+     * an UltraErrorException if `throw => true` is active.
      *
      * @param int $id
      * @return UltraConfigModel
      */
     public function getConfigById(int $id): UltraConfigModel
     {
-        try {
-            if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
-                UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['id' => $id]);
-                return UltraError::handle('UCM_NOT_FOUND', ['id' => $id], new \Exception("Simulated UCM_NOT_FOUND"));
-            }
+        if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
+            UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['id' => $id]);
+            throw UltraError::handle('UCM_NOT_FOUND', ['id' => $id], new \Exception("Simulated UCM_NOT_FOUND"));
+        }
 
+        try {
             return UltraConfigModel::findOrFail($id);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return UltraError::handle('UCM_NOT_FOUND', ['id' => $id], $e);
+            throw UltraError::handle('UCM_NOT_FOUND', ['id' => $id], $e);
         } catch (\Exception $e) {
-            return UltraError::handle('UNEXPECTED_ERROR', [
+            throw UltraError::handle('UNEXPECTED_ERROR', [
                 'message' => $e->getMessage(),
                 'operation' => 'getConfigById',
                 'id' => $id,
             ], $e);
         }
     }
+
 
     /**
      * Retrieve a configuration entry by its unique key.
