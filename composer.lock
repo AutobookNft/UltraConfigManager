@@ -5455,12 +5455,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraErrorManager.git",
-                "reference": "f67bcc9459827ea5376c86288cca8c7584be2101"
+                "reference": "69862ba78a26217d3f42cb8bc1580aa1d8039751"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/f67bcc9459827ea5376c86288cca8c7584be2101",
-                "reference": "f67bcc9459827ea5376c86288cca8c7584be2101",
+                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/69862ba78a26217d3f42cb8bc1580aa1d8039751",
+                "reference": "69862ba78a26217d3f42cb8bc1580aa1d8039751",
                 "shasum": ""
             },
             "require": {
@@ -5519,7 +5519,7 @@
                 "source": "https://github.com/AutobookNft/UltraErrorManager/tree/main",
                 "issues": "https://github.com/AutobookNft/UltraErrorManager/issues"
             },
-            "time": "2025-04-05T12:48:19+00:00"
+            "time": "2025-04-05T14:54:45+00:00"
         },
         {
             "name": "ultra/ultra-log-manager",
