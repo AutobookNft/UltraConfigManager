@@ -81,7 +81,7 @@ class EloquentConfigDao implements ConfigDaoInterface
 
             if (TestingConditions::isTesting('UCM_NOT_FOUND')) {
                 UltraLog::info('UCM DAO', 'Simulating UCM_NOT_FOUND error', ['key' => $key]);
-                return UltraError::handle('UCM_NOT_FOUND', ['key' => $key], new \Exception("Simulated"));
+                UltraError::handle('UCM_NOT_FOUND', ['key' => $key], new \Exception("Simulated"), true); // throw = true
             }
 
             $config = UltraConfigModel::where('key', $key)->firstOrFail();
