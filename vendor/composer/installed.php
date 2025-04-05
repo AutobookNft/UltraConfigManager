@@ -3,7 +3,7 @@
         'name' => 'ultra/ultra-config-manager',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '78237166deed1de473a85991b6de2dfc8e10599d',
+        'reference' => 'b91f62bdd667269c010cde2c95a911d875413f2f',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1340,7 +1340,7 @@
         'ultra/ultra-config-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '78237166deed1de473a85991b6de2dfc8e10599d',
+            'reference' => 'b91f62bdd667269c010cde2c95a911d875413f2f',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1371,7 +1371,7 @@
         'ultra/ultra-translation-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '8417cc879c33ea7c254b82bcbe0d7fc42851822a',
+            'reference' => '7270840ac48583a70c42a20b03d32e97d3a38cc0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-translation-manager',
             'aliases' => array(

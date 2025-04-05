@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5ee56744392597104f7e07f5e8332c7",
+    "content-hash": "f07163de12627c6a07de172f3170d76f",
     "packages": [
         {
             "name": "brick/math",
@@ -5582,12 +5582,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraTranslationManager.git",
-                "reference": "8417cc879c33ea7c254b82bcbe0d7fc42851822a"
+                "reference": "7270840ac48583a70c42a20b03d32e97d3a38cc0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraTranslationManager/zipball/8417cc879c33ea7c254b82bcbe0d7fc42851822a",
-                "reference": "8417cc879c33ea7c254b82bcbe0d7fc42851822a",
+                "url": "https://api.github.com/repos/AutobookNft/UltraTranslationManager/zipball/7270840ac48583a70c42a20b03d32e97d3a38cc0",
+                "reference": "7270840ac48583a70c42a20b03d32e97d3a38cc0",
                 "shasum": ""
             },
             "require": {
@@ -5629,7 +5629,7 @@
                 "source": "https://github.com/AutobookNft/UltraTranslationManager/tree/main",
                 "issues": "https://github.com/AutobookNft/UltraTranslationManager/issues"
             },
-            "time": "2025-03-30T09:13:44+00:00"
+            "time": "2025-04-05T15:28:45+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
