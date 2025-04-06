@@ -219,6 +219,9 @@ class EloquentConfigDao implements ConfigDaoInterface
     
                 UltraLog::info('UCM DAO', "Deleted configuration with key: {$config->key}");
             });
+
+            return;
+        
         } catch (\Exception $e) {
             UltraError::handle('UCM_DELETE_FAILED', [
                 'key' => $config->key,
