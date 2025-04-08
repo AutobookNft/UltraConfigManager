@@ -29,7 +29,11 @@
             "Ultra\\UltraConfigManager\\": "src/",
             "Ultra\\UltraConfigManager\\Tests\\": "tests/",
             "Ultra\\UltraConfigManager\\Database\\Factories\\": "database/factories/"
-        }
+        },
+        "exclude-from-classmap": [
+          "tests/**/*oracode.php",
+          "src/**/*oracode.php"
+        ]
     },
     "extra": {
         "laravel": {
