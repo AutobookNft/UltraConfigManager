@@ -5527,12 +5527,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "4baff411ee6ae5b5a309d96ea32b64dbfa060295"
+                "reference": "8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/4baff411ee6ae5b5a309d96ea32b64dbfa060295",
-                "reference": "4baff411ee6ae5b5a309d96ea32b64dbfa060295",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49",
+                "reference": "8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49",
                 "shasum": ""
             },
             "require": {
@@ -5574,7 +5574,7 @@
                 "source": "https://github.com/AutobookNft/UltraLogManager/tree/main",
                 "issues": "https://github.com/AutobookNft/UltraLogManager/issues"
             },
-            "time": "2025-04-08T19:25:51+00:00"
+            "time": "2025-04-08T19:45:50+00:00"
         },
         {
             "name": "ultra/ultra-translation-manager",
