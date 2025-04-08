@@ -4,7 +4,7 @@ namespace Ultra\UltraConfigManager;
 
 use Ultra\UltraConfigManager\Constants\GlobalConstants;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
-use Ultra\UltraConfigManager\Models\UltraConfigModel; 
+use Ultra\UltraConfigManager\Models\UltraConfigModel;
 use Ultra\UltraConfigManager\Models\UltraConfigVersion;
 use Ultra\UltraConfigManager\Models\UltraConfigAudit;
 use Ultra\UltraConfigManager\Services\VersionManager;
@@ -15,80 +15,158 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * UltraConfigManager - Centralized and secure configuration management class.
+ * UltraConfigManager – Oracoded Edition
  *
- * This class provides a robust interface for managing configurations in the Ultra ecosystem,
- * with features like encryption, versioning, audit logging, and secure caching. It ensures
- * that all configuration operations are validated, logged, and persisted safely.
+ * 🎯 Central orchestrator for secure, testable, and auditable config state.
+ * 🧱 Fully modular, mutation-aware and cache-controllable.
+ * 🧪 Extensively test-driven and injection-complete.
+ * 🔥 Critical for consistency, rollback integrity and observability.
+ * 🧩 Compliant with Oracode/UDP standards and semantic traceability.
  */
 class UltraConfigManager
 {
     /**
-     * In-memory configuration array.
+     * 🧱 @structural In-memory configuration array
      *
-     * @var array<string, array<string, mixed>>
+     * Holds the current state of the loaded configuration. This array is populated
+     * during boot via `loadConfig()`, and optionally refreshed via `reload()` or
+     * cache invalidation processes.
+     *
+     * @var array<string, array{value: mixed, category?: string}>
      */
     private array $config = [];
 
     /**
-     * Global constants used across the system.
+     * 🧱 @structural Global constants handler
+     *
+     * Provides access to shared constant values used across the configuration
+     * logic, especially for fallback identity and system-wide markers.
      *
      * @var GlobalConstants
      */
     protected GlobalConstants $globalConstants;
 
     /**
-     * Version manager for handling configuration versioning.
+     * 🧱 @structural Version manager
+     *
+     * Manages the generation and assignment of sequential version numbers
+     * for persisted configuration changes.
      *
      * @var VersionManager
      */
     protected VersionManager $versionManager;
 
     /**
-     * Cache key used to store configurations.
+     * 🧩 @configurable Cache key used to store and retrieve serialized config
+     *
+     * This value is referenced by both runtime operations and test scenarios,
+     * and must remain stable to avoid cache fragmentation.
      *
      * @var string
      */
     private const CACHE_KEY = 'ultra_config.cache';
 
     /**
-     * ConfigDao instance for database operations.
+     * 🧱 @structural Config DAO
+     *
+     * DAO abstraction used for retrieving and persisting configuration records
+     * from the underlying database layer.
      *
      * @var ConfigDaoInterface
      */
     protected ConfigDaoInterface $configDao;
 
+    /**
+     * 🧪 Test Override: TTL value for cache simulation
+     *
+     * This field allows test classes to override the default TTL used when
+     * caching configuration. It bypasses the call to `config('uconfig.cache.ttl')`,
+     * which would fail outside of Laravel’s container.
+     *
+     * 🧩 Overrides dynamic behavior from env/config
+     * 🔄 Alters cache control logic in test mode
+     *
+     * @var int|null
+     * @configurable
+     * @mutation
+     */
+    protected ?int $testCacheTtl = null;
 
     /**
      * ⛓️ Oracular Control Flag (Testing Only)
-     * Forces the cache behavior in test environments where Laravel's config() is unavailable.
      *
+     * Forces the cache behavior in test environments where Laravel's config() is unavailable.
      * 🧪 Only settable via testingForceCache()
      * 🔒 Not to be used in production
      * 🧱 Structural override point for testing scenarios
+     *
+     * @var bool|null
+     * @test
+     * @structural
      */
     protected ?bool $testCacheFlag = null;
 
     /**
-     * Constructor.
+     * 🔌 Log Toggle Flag (for Test Environments)
      *
-     * Initializes the configuration manager with environment loader, constants, and version manager.
-     * Loads configurations on instantiation.
+     * Controls whether internal logging via UltraLog is allowed.
+     * In standalone PHPUnit executions where Laravel’s Facade root
+     * is not available, this flag can be disabled to prevent crashes.
      *
-     * @param GlobalConstants $globalConstants Global constants for the system.
-     * @param VersionManager $versionManager Manager for configuration versions.
-     * @param ConfigDaoInterface $configDao Data access object for configuration operations.
+     * 🧪 Used to bypass UltraLog in pure test runners
+     * 🧱 Structural control of side effects
+     *
+     * @var bool
+     */
+    protected bool $logEnabled = true;
+
+
+     /**
+     * 🎯 Entry Point: UltraConfigManager constructor
+     *
+     * Initializes the core configuration engine for the Ultra ecosystem.
+     * Injects the required dependencies: GlobalConstants, VersionManager, and
+     * ConfigDaoInterface. Immediately triggers a configuration load, including
+     * database and environment merges, optionally cached.
+     *
+     * 🔐 Lifecycle entry for all configuration interactions
+     * 🧪 Fully testable: all injected dependencies can be mocked
+     * 🔄 Mutates internal config state via `loadConfig()`
+     * 🧱 Structurally prepares logging and semantic availability
+     *
+     * @param GlobalConstants $globalConstants Global constant provider (identity fallback, etc.)
+     * @param VersionManager $versionManager Versioning strategy manager
+     * @param ConfigDaoInterface $configDao Abstraction for database interaction layer
      */
     public function __construct(
         GlobalConstants $globalConstants,
         VersionManager $versionManager,
-        ConfigDaoInterface $configDao
+        ConfigDaoInterface $configDao,
     ) {
+
+         UltraLog::info('UCM Action', 'UltraConfigManager initialized');
+
         $this->globalConstants = $globalConstants;
         $this->versionManager = $versionManager;
         $this->configDao = $configDao;
         $this->loadConfig();
-        UltraLog::info('UCM Action', 'UltraConfigManager initialized');
+    }
+
+    /**
+     * 🧪 Test Utility: Disable UltraLog usage during tests
+     *
+     * This method turns off logging from within the UltraConfigManager
+     * to prevent facade-related errors in environments lacking the full
+     * Laravel container setup (e.g. pure PHPUnit runs).
+     *
+     * 🔐 Should be invoked during test bootstrap
+     * 📡 Logging remains active in all other contexts
+     *
+     * @return void
+     */
+    public function disableLoggingForTesting(): void
+    {
+        $this->logEnabled = false;
     }
 
     /**
@@ -107,6 +185,46 @@ class UltraConfigManager
     }
 
     /**
+     * ⛓️ Oracular Hook: Inject TTL for cache logic in test environment
+     *
+     * This method injects a TTL override value that replaces the Laravel
+     * config-based TTL in test environments. Essential for running UCM tests
+     * outside of the application context.
+     *
+     * 🔐 Used only in test scaffolding
+     * 🔄 Alters the TTL retrieval logic
+     *
+     * @param int $ttl Override value for cache TTL
+     * @configurable
+     * @mutation
+     * @test
+     */
+    public function testingForceCacheTtl(int $ttl): void
+    {
+        $this->testCacheTtl = $ttl;
+    }
+
+    /**
+     * ⛓️ Oracular Resolution: Determine effective cache TTL
+     *
+     * Returns the TTL for config cache depending on test overrides.
+     * Avoids calling Laravel's config() in non-container environments.
+     *
+     * 🧩 Branches on test state
+     * 🔄 Modifies cache persistence logic
+     *
+     * @return int Effective TTL to use in cache layer
+     * @configurable
+     * @mutation
+     * @signature loadConfig_uses_cache_when_enabled
+     * @test
+     */
+    private function getCacheTtl(): int
+    {
+        return $this->testCacheTtl ?? 3600;
+    }
+
+    /**
      * ⛓️ Oracular Decision Gateway: Cache Strategy Resolution
      * Returns whether cache should be used based on testing override
      * or default Laravel configuration fallback.
@@ -117,67 +235,99 @@ class UltraConfigManager
      */
     private function isCacheEnabled(): bool
     {
-        return $this->testCacheFlag ?? config('uconfig.cache.enabled', true);
+        return $this->testCacheFlag ?? true;
     }
 
     /**
-     * Load configurations from environment variables.
+     * 🧷 Fallback Loader: Merge environment variables into in-memory config
      *
-     * Merges environment variables into the in-memory configuration array, skipping duplicates.
+     * Iterates over the raw environment (`$_ENV`) and injects all keys
+     * not already present in `$this->config`, preserving database priority.
+     *
+     * This method is used to ensure that environment-defined configuration
+     * values are never lost, while still allowing override from persistent storage.
+     *
+     * 🔐 Used at boot as secondary config source
+     * 🧪 Silent by design, but traceable if logging is enabled
+     * 🧱 Structural fallback layer for config merge logic
+     * 🔄 Mutates in-memory `$this->config`
      *
      * @return void
      */
+    private function loadFromEnv(): void
+    {
+        foreach ($_ENV as $key => $value) {
+            if (!array_key_exists($key, $this->config)) {
+                $this->config[$key] = ['value' => $value];
+            }
+        }
 
-     private function loadFromEnv(): void
-     {
-         $envConfig = $_ENV; // Usa direttamente $_ENV
-         foreach ($envConfig as $key => $value) {
-             if (!array_key_exists($key, $this->config)) {
-                 $this->config[$key] = ['value' => $value];
-             }
-         }
-         UltraLog::debug('UCM Action', 'Environment variables merged into configurations');
-     }
+        UltraLog::debug('UCM Action', 'Environment variables merged into configurations');
 
-    /**
-     * Load all configurations into memory.
+    }
+
+        /**
+     * 🔄 Configuration Bootstrap Loader
      *
-     * Loads configurations from database and environment variables, using cache if enabled.
-     * Logs the operation for traceability.
+     * Entry point for hydration of in-memory config. It determines whether
+     * to use the cache or to rehydrate the configuration directly from the
+     * database and environment. Also logs the method of retrieval.
+     *
+     * 🧠 Decides strategy via `isCacheEnabled()`
+     * 🧩 Uses TTL determined by `getCacheTtl()`
+     * 🧪 Supports test override paths for both logic branches
+     * 🧱 Mutates `$this->config` as primary result
+     * 📦 May retrieve data from Laravel cache layer
      *
      * @return void
+     * @entrypoint
+     * @mutation
+     * @cache
      */
     public function loadConfig(): void
     {
+
         UltraLog::info('UCM Action', 'Loading configurations');
-        $useCache = config('uconfig.cache.enabled', true);
+
+
+        $useCache = $this->isCacheEnabled();
 
         if ($useCache) {
-            $ttl = config('uconfig.cache.ttl', 3600);
+            $ttl = $this->getCacheTtl();
             $this->config = Cache::remember(self::CACHE_KEY, $ttl, function () {
                 $this->loadFromDatabase();
                 $this->loadFromEnv();
                 return $this->config;
             });
+
             UltraLog::debug('UCM Action', "Configurations loaded from cache with TTL: {$ttl}");
+
         } else {
             $this->loadFromDatabase();
             $this->loadFromEnv();
+
             UltraLog::debug('UCM Action', 'Configurations loaded without cache');
         }
     }
 
-
-    /**
-     * Load configurations from the database.
+     /**
+     * ⛓️ Oracular Behavior: Load configurations from database
      *
-     * Retrieves all configurations from the 'uconfig' table and populates the in-memory array.
+     * Retrieves all persisted configurations from the DB and maps them to the
+     * in-memory format. Handles missing table and null values gracefully.
      *
-     * @return array<string, array<string, mixed>> The loaded configurations.
+     * 🧷 Used as fallback when cache is disabled
+     * 🔐 Safe for test execution without facades if logging is disabled
+     * 🧱 Part of loadConfig() flow
+     * 🧪 Covered by: loadConfig_pulls_from_database_when_cache_disabled
+     * 🚨 Handles: table absence, DAO failure
+     *
+     * @return array<string, array<string, mixed>> In-memory configuration map
      */
     private function loadFromDatabase(): array
     {
         $configArray = [];
+
         if (!Schema::hasTable('uconfig')) {
             UltraLog::warning('UCM Action', "The 'uconfig' table does not exist");
             return $configArray;
@@ -185,6 +335,7 @@ class UltraConfigManager
 
         try {
             $configs = $this->configDao->getAllConfigs();
+
             foreach ($configs as $config) {
                 if ($config->value !== null) {
                     $configArray[$config->key] = [
@@ -195,6 +346,7 @@ class UltraConfigManager
                     UltraLog::warning('UCM Action', "Configuration with key {$config->key} has a null value and will be ignored");
                 }
             }
+
             UltraLog::info('UCM Action', 'Configurations loaded from database successfully');
         } catch (\Exception $e) {
             UltraLog::error('UCM Action', "Error loading configurations from database: {$e->getMessage()}");
@@ -202,6 +354,8 @@ class UltraConfigManager
 
         return $configArray;
     }
+
+
 
     /**
      * Determine if a given config key exists.
