@@ -58,17 +58,6 @@ class UltraConfigManager
      */
     protected ConfigDaoInterface $configDao;
 
-
-    /**
-     * ⛓️ Oracular Control Flag (Testing Only)
-     * Forces the cache behavior in test environments where Laravel's config() is unavailable.
-     *
-     * 🧪 Only settable via testingForceCache()
-     * 🔒 Not to be used in production
-     * 🧱 Structural override point for testing scenarios
-     */
-    protected ?bool $testCacheFlag = null;
-
     /**
      * Constructor.
      *
@@ -79,6 +68,11 @@ class UltraConfigManager
      * @param VersionManager $versionManager Manager for configuration versions.
      * @param ConfigDaoInterface $configDao Data access object for configuration operations.
      */
+/**
+ * TODO: [UDP] Describe purpose of '__construct'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function __construct(
         GlobalConstants $globalConstants,
         VersionManager $versionManager,
@@ -92,35 +86,6 @@ class UltraConfigManager
     }
 
     /**
-     * ⛓️ Oracular Utility: Testing-only Cache Flag Injection
-     * Allows external control over the internal cache decision logic,
-     * bypassing the Laravel config() call for test environments.
-     *
-     * 🔐 Usage Context: PHPUnit, no Laravel container
-     * 🧪 Enables precise control of test scenario setup
-     * 🎯 Target: isCacheEnabled() logic branch
-     * 🧱 Structural: Supports modular testing isolation
-     */
-    public function testingForceCache(bool $enabled): void
-    {
-        $this->testCacheFlag = $enabled;
-    }
-
-    /**
-     * ⛓️ Oracular Decision Gateway: Cache Strategy Resolution
-     * Returns whether cache should be used based on testing override
-     * or default Laravel configuration fallback.
-     *
-     * 🔐 Conditional source: testCacheFlag or config('uconfig.cache.enabled')
-     * 🧠 Branching logic controlling cache path
-     * 🧷 Fallback logic: defaults to true if config not available
-     */
-    private function isCacheEnabled(): bool
-    {
-        return $this->testCacheFlag ?? config('uconfig.cache.enabled', true);
-    }
-
-    /**
      * Load configurations from environment variables.
      *
      * Merges environment variables into the in-memory configuration array, skipping duplicates.
@@ -128,6 +93,11 @@ class UltraConfigManager
      * @return void
      */
 
+/**
+ * TODO: [UDP] Describe purpose of 'loadFromEnv'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
      private function loadFromEnv(): void
      {
          $envConfig = $_ENV; // Usa direttamente $_ENV
@@ -147,6 +117,11 @@ class UltraConfigManager
      *
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'loadConfig'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function loadConfig(): void
     {
         UltraLog::info('UCM Action', 'Loading configurations');
@@ -175,6 +150,11 @@ class UltraConfigManager
      *
      * @return array<string, array<string, mixed>> The loaded configurations.
      */
+/**
+ * TODO: [UDP] Describe purpose of 'loadFromDatabase'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     private function loadFromDatabase(): array
     {
         $configArray = [];
@@ -209,6 +189,11 @@ class UltraConfigManager
      * @param  string  $key
      * @return bool
      */
+/**
+ * TODO: [UDP] Describe purpose of 'has'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function has(string $key): bool
     {
         return $this->get($key, null, true) !== null;
@@ -225,6 +210,11 @@ class UltraConfigManager
      * @param bool $silent If true, suppresses logging for missing keys or tables.
      * @return mixed The configuration value or default.
      */
+/**
+ * TODO: [UDP] Describe purpose of 'get'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function get(string $key, mixed $default = null, bool $silent = false): mixed
     {
         if (!Schema::hasTable('uconfig')) {
@@ -266,6 +256,11 @@ class UltraConfigManager
      * @throws \Exception If the operation fails.
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'set'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function set(string $key, mixed $value, ?string $category = null, ?object $user = null, bool $version = true, bool $audit = true): void
     {
         if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $key)) {
@@ -304,6 +299,11 @@ class UltraConfigManager
      * @param string|null $category The configuration category.
      * @return UltraConfigModel|null The saved model instance or null on failure.
      */
+/**
+ * TODO: [UDP] Describe purpose of 'saveToUConfig'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     private function saveToUConfig(string $key, mixed $value, ?string $category): ?UltraConfigModel
     {
         try {
@@ -335,6 +335,11 @@ class UltraConfigManager
      * @param mixed $value The value to record.
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'saveVersion'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     private function saveVersion(UltraConfigModel $config, mixed $value): void
     {
         try {
@@ -356,6 +361,11 @@ class UltraConfigManager
      * @param mixed $newValue The new value of the configuration.
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'saveAudit'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     private function saveAudit(UltraConfigModel $config, string $action, mixed $newValue): void
     {
         try {
@@ -384,6 +394,11 @@ class UltraConfigManager
      * @param bool $audit Whether to record an audit entry (default: true).
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'delete'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function delete(string $key, bool $version = true, bool $audit = true): void
     {
         if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $key)) {
@@ -417,6 +432,11 @@ class UltraConfigManager
      *
      * @return array<string, mixed> The configuration values.
      */
+/**
+ * TODO: [UDP] Describe purpose of 'all'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function all(): array
     {
         return array_map(fn($config) => $config['value'], $this->config);
@@ -430,6 +450,11 @@ class UltraConfigManager
      * @return void
      * @throws \Exception If cache refresh fails.
      */
+/**
+ * TODO: [UDP] Describe purpose of 'refreshConfigCache'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function refreshConfigCache(?string $key = null): void
     {
         $lock = Cache::lock('ultra_config_cache_lock', 10);
@@ -469,6 +494,7 @@ class UltraConfigManager
      *
      * Useful for tests or emergency reboots.
      */
+// TODO: Add semantic annotations (@param, @return) to 'reload'
     public function reload(): void
     {
         $this->config = UltraConfigModel::all()->keyBy('key')->toArray();
@@ -481,6 +507,11 @@ class UltraConfigManager
      * @throws \InvalidArgumentException if the constant is not defined
      * @return void
      */
+/**
+ * TODO: [UDP] Describe purpose of 'validateConstant'
+ *
+ * Semantic placeholder auto-inserted by Oracode.
+ */
     public function validateConstant(string $name): void
     {
         if (!defined(GlobalConstants::class . '::' . $name)) {
