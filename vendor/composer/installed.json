@@ -8587,12 +8587,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraErrorManager.git",
-                "reference": "a9f193ef66ff7f58f75f333de6205698bb26513a"
+                "reference": "19d4946b77fb622929a194583f970947e89aa43f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/a9f193ef66ff7f58f75f333de6205698bb26513a",
-                "reference": "a9f193ef66ff7f58f75f333de6205698bb26513a",
+                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/19d4946b77fb622929a194583f970947e89aa43f",
+                "reference": "19d4946b77fb622929a194583f970947e89aa43f",
                 "shasum": ""
             },
             "require": {
@@ -8611,7 +8611,7 @@
                 "orchestra/testbench": "^9.0",
                 "phpunit/phpunit": "^11.5.3"
             },
-            "time": "2025-04-05T15:13:38+00:00",
+            "time": "2025-04-08T20:59:51+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {

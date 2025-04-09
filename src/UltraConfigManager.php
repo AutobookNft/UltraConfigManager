@@ -144,29 +144,16 @@ class UltraConfigManager
         ConfigDaoInterface $configDao,
     ) {
 
-         UltraLog::info('UCM Action', 'UltraConfigManager initialized');
+        UltraLog::info('UCM Action', 'UltraConfigManager initialized');
 
         $this->globalConstants = $globalConstants;
         $this->versionManager = $versionManager;
         $this->configDao = $configDao;
-        $this->loadConfig();
-    }
 
-    /**
-     * 🧪 Test Utility: Disable UltraLog usage during tests
-     *
-     * This method turns off logging from within the UltraConfigManager
-     * to prevent facade-related errors in environments lacking the full
-     * Laravel container setup (e.g. pure PHPUnit runs).
-     *
-     * 🔐 Should be invoked during test bootstrap
-     * 📡 Logging remains active in all other contexts
-     *
-     * @return void
-     */
-    public function disableLoggingForTesting(): void
-    {
-        $this->logEnabled = false;
+        // ⛓️ Load config only if running inside a full Laravel context
+        if (app()->bound('cache') && app()->bound('db')) {
+            $this->loadConfig();
+        }
     }
 
     /**
@@ -181,6 +168,7 @@ class UltraConfigManager
      */
     public function testingForceCache(bool $enabled): void
     {
+        // dd("testingForceCache", $enabled);
         $this->testCacheFlag = $enabled;
     }
 
@@ -235,6 +223,7 @@ class UltraConfigManager
      */
     private function isCacheEnabled(): bool
     {
+        // dd('isCacheEnabled', $this->testCacheFlag);
         return $this->testCacheFlag ?? true;
     }
 
@@ -266,7 +255,7 @@ class UltraConfigManager
 
     }
 
-        /**
+    /**
      * 🔄 Configuration Bootstrap Loader
      *
      * Entry point for hydration of in-memory config. It determines whether
@@ -276,6 +265,7 @@ class UltraConfigManager
      * 🧠 Decides strategy via `isCacheEnabled()`
      * 🧩 Uses TTL determined by `getCacheTtl()`
      * 🧪 Supports test override paths for both logic branches
+     * 🧷 Internally safe for Fake DAO and test environment bypass
      * 🧱 Mutates `$this->config` as primary result
      * 📦 May retrieve data from Laravel cache layer
      *
@@ -283,53 +273,66 @@ class UltraConfigManager
      * @entrypoint
      * @mutation
      * @cache
+     * @fallback
      */
     public function loadConfig(): void
     {
-
         UltraLog::info('UCM Action', 'Loading configurations');
 
-
         $useCache = $this->isCacheEnabled();
+        $cacheKey = self::CACHE_KEY;
+        $ttl = $this->getCacheTtl();
 
-        if ($useCache) {
-            $ttl = $this->getCacheTtl();
-            $this->config = Cache::remember(self::CACHE_KEY, $ttl, function () {
-                $this->loadFromDatabase();
+        if ($useCache && app()->bound('cache')) {
+            $cached = Cache::get($cacheKey);
+
+            if (is_array($cached) && !empty($cached)) {
+                $this->config = $cached;
+                UltraLog::debug('UCM Action', 'Configurations loaded from cache');
+            } else {
+                $this->config = $this->loadFromDatabase();
                 $this->loadFromEnv();
-                return $this->config;
-            });
-
-            UltraLog::debug('UCM Action', "Configurations loaded from cache with TTL: {$ttl}");
-
+                Cache::put($cacheKey, $this->config, $ttl);
+                UltraLog::debug('UCM Action', "Configurations loaded fresh and cached for TTL: {$ttl}");
+            }
         } else {
-            $this->loadFromDatabase();
+            $this->config = $this->loadFromDatabase();
             $this->loadFromEnv();
-
             UltraLog::debug('UCM Action', 'Configurations loaded without cache');
         }
     }
 
-     /**
+    /**
      * ⛓️ Oracular Behavior: Load configurations from database
      *
      * Retrieves all persisted configurations from the DB and maps them to the
      * in-memory format. Handles missing table and null values gracefully.
      *
+     * ⚠️ Laravel's `Schema::hasTable()` is a facade that requires the application
+     * container and a bound DB connection. In test environments (e.g., CLI PHPUnit),
+     * facades may not be initialized, resulting in a `Facade root not set` exception.
+     * To prevent this, we check `app()->bound('db')` and `app()->bound('schema')`
+     * before any access to facades inside closures.
+     *
      * 🧷 Used as fallback when cache is disabled
-     * 🔐 Safe for test execution without facades if logging is disabled
+     * 🔐 Safe for test execution without Laravel container
      * 🧱 Part of loadConfig() flow
      * 🧪 Covered by: loadConfig_pulls_from_database_when_cache_disabled
-     * 🚨 Handles: table absence, DAO failure
+     * 🚨 Handles: table absence, DAO failure, test isolation
      *
      * @return array<string, array<string, mixed>> In-memory configuration map
      */
     private function loadFromDatabase(): array
     {
+        UltraLog::info('UCM Action', 'Loading configurations from database');
+
         $configArray = [];
 
-        if (!Schema::hasTable('uconfig')) {
-            UltraLog::warning('UCM Action', "The 'uconfig' table does not exist");
+        // 🔐 Test-safe bypass for fakes and sandbox environments
+        if ($this->configDao->shouldBypassSchemaChecks()) {
+            UltraLog::debug('UCM Action', 'DAO requested schema bypass (likely test)');
+        } elseif (!app()->bound('db') || !app()->bound('schema') || !Schema::hasTable('uconfig')) {
+            UltraLog::warning('UCM Action', "Schema or DB not available, or 'uconfig' table missing – skipping database load");
             return $configArray;
         }
 
@@ -352,10 +355,10 @@ class UltraConfigManager
             UltraLog::error('UCM Action', "Error loading configurations from database: {$e->getMessage()}");
         }
 
+        // 🔄 Commit loaded config to memory
+        $this->config = $configArray;
         return $configArray;
     }
-
-
 
     /**
      * Determine if a given config key exists.
@@ -370,35 +373,39 @@ class UltraConfigManager
 
 
     /**
-     * Retrieve a configuration value.
+     * 🎯 Retrieve a configuration value from memory
      *
-     * Fetches a value by key from the in-memory configuration, falling back to a default if not found.
+     * Accesses a config value by key from the in-memory `$this->config` map,
+     * falling back to a default if the key is not found.
      *
-     * @param string $key The configuration key to retrieve.
-     * @param mixed $default The default value if the key is not found.
-     * @param bool $silent If true, suppresses logging for missing keys or tables.
-     * @return mixed The configuration value or default.
+     * Does **not** trigger database or cache access – expects hydration via `loadConfig()`.
+     * Logs are suppressed if `app()->bound('log')` is false (common in test CLI).
+     *
+     * 🧠 Silent mode disables all log output
+     * 🔐 Safe for CLI test execution (no facades unless bound)
+     * 🧪 Covered by: loadConfig_uses_cache_when_enabled
+     * 📦 Expects `$this->config` to be already populated
+     *
+     * @param string $key The configuration key to retrieve
+     * @param mixed $default Default value if key is missing
+     * @param bool $silent If true, suppresses log output
+     * @return mixed Configuration value or default
+     *
+     * @readonly
+     * @resolver
+     * @log
      */
     public function get(string $key, mixed $default = null, bool $silent = false): mixed
     {
-        if (!Schema::hasTable('uconfig')) {
-            if (!$silent) {
-                UltraLog::warning('UCM Action', "The 'uconfig' table does not exist. Returning default: " . json_encode($default));
-            }
-            return $default;
-        }
-
-        if (empty($this->config)) {
-            $this->config = Cache::get(self::CACHE_KEY, []);
-            if (!$silent) {
-                UltraLog::debug('UCM Action', "Loaded configurations from cache for key: {$key}");
-            }
-        }
-
         $value = $this->config[$key]['value'] ?? $default;
 
-        if ($value === $default && !$silent) {
-            UltraLog::info('UCM Action', "Config key '{$key}' not found. Using default: " . json_encode($default));
+        // 🧷 Log only if log facade is available (test-mode safe)
+        if (!$silent && app()->bound('log')) {
+            if ($value === $default) {
+                UltraLog::info('UCM Action', "Config key '{$key}' not found. Using default: " . json_encode($default));
+            } else {
+                UltraLog::debug('UCM Action', "Retrieved config key '{$key}' with value: " . json_encode($value));
+            }
         }
 
         return $value;
@@ -619,14 +626,24 @@ class UltraConfigManager
     }
 
     /**
-     * Reloads the configuration cache directly from the database.
+     * 🔄 Reload configuration bypassing cache
      *
-     * Useful for tests or emergency reboots.
+     * Forces a direct reload of all configurations from their primary
+     * sources: database and environment. Useful in tests or emergency
+     * scenarios when cache must be ignored.
+     *
+     * 🧪 Test-safe: avoids facades or Eloquent directly
+     * 🧱 Uses same logic path as `loadConfig()` without caching
+     * 🧷 Allows recovery from invalid state
+     *
+     * @return void
      */
     public function reload(): void
     {
-        $this->config = UltraConfigModel::all()->keyBy('key')->toArray();
+        $this->config = $this->loadFromDatabase();
+        $this->loadFromEnv();
     }
+
 
     /**
      * Validate that the given constant is defined in GlobalConstants.

@@ -6878,6 +6878,7 @@ class ComposerStaticInit5912e6ca784bbea86cc567ae98606784
         'Ultra\\ErrorManager\\Http\\Middleware\\EnvironmentMiddleware' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Http/Middleware/EnvironmentMiddleware.php',
         'Ultra\\ErrorManager\\Http\\Middleware\\ErrorHandlingMiddleware' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Http/Middleware/ErrorHandlingMiddleware.php',
         'Ultra\\ErrorManager\\Interfaces\\ErrorHandlerInterface' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Interfaces/ErrorHandlerInterface.php',
+        'Ultra\\ErrorManager\\Interfaces\\ErrorManagerInterface' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Interfaces/ErrorManagerInterface.php',
         'Ultra\\ErrorManager\\Models\\ErrorLog' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Models/ErrorLog.php',
         'Ultra\\ErrorManager\\Providers\\UltraErrorManagerServiceProvider' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Providers/UltraErrorManagerServiceProvider.php',
         'Ultra\\ErrorManager\\Services\\TestingConditionsManager' => __DIR__ . '/..' . '/ultra/ultra-error-manager/src/Services/TestingConditionsManager.php',

@@ -6316,6 +6316,7 @@ return array(
     'Ultra\\ErrorManager\\Http\\Middleware\\EnvironmentMiddleware' => $vendorDir . '/ultra/ultra-error-manager/src/Http/Middleware/EnvironmentMiddleware.php',
     'Ultra\\ErrorManager\\Http\\Middleware\\ErrorHandlingMiddleware' => $vendorDir . '/ultra/ultra-error-manager/src/Http/Middleware/ErrorHandlingMiddleware.php',
     'Ultra\\ErrorManager\\Interfaces\\ErrorHandlerInterface' => $vendorDir . '/ultra/ultra-error-manager/src/Interfaces/ErrorHandlerInterface.php',
+    'Ultra\\ErrorManager\\Interfaces\\ErrorManagerInterface' => $vendorDir . '/ultra/ultra-error-manager/src/Interfaces/ErrorManagerInterface.php',
     'Ultra\\ErrorManager\\Models\\ErrorLog' => $vendorDir . '/ultra/ultra-error-manager/src/Models/ErrorLog.php',
     'Ultra\\ErrorManager\\Providers\\UltraErrorManagerServiceProvider' => $vendorDir . '/ultra/ultra-error-manager/src/Providers/UltraErrorManagerServiceProvider.php',
     'Ultra\\ErrorManager\\Services\\TestingConditionsManager' => $vendorDir . '/ultra/ultra-error-manager/src/Services/TestingConditionsManager.php',
