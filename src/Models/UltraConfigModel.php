@@ -1,45 +1,125 @@
 <?php
 
+/**
+ * 📜 Oracode Model: UltraConfigModel
+ *
+ * @package         Ultra\UltraConfigManager\Models
+ * @version         1.1.0 // Versione incrementata per refactoring Oracode
+ * @author          Fabio Cherici
+ * @copyright       2024 Fabio Cherici
+ * @license         MIT
+ */
+
 namespace Ultra\UltraConfigManager\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Psr\Log\LoggerInterface; // Per Dependency Injection (opzionale)
 use Ultra\UltraConfigManager\Casts\EncryptedCast;
 use Ultra\UltraConfigManager\Enums\CategoryEnum;
-use Ultra\UltraLogManager\Facades\UltraLog;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory; // Path corretto per la Factory
+// Import eccezioni se necessario (es. in boot)
+use InvalidArgumentException;
+use LogicException;
+use Throwable;
 
 /**
- * UltraConfigModel - Represents a configuration entry in the Ultra ecosystem.
+ * 🎯 Purpose: Represents a single configuration entry within the UltraConfigManager system.
+ *    This Eloquent model defines the structure, behavior, and relationships for configuration
+ *    records stored in the database, including automatic value encryption, category management,
+ *    versioning, auditing links, and key immutability.
  *
- * This model handles the storage and retrieval of configuration key-value pairs,
- * with encryption, versioning, and audit support. It uses soft deletes to ensure
- * historical data is preserved.
+ * 🧱 Structure:
+ *    - Eloquent Model extending `Illuminate\Database\Eloquent\Model`.
+ *    - Traits: `SoftDeletes` for historical preservation, `HasFactory` for testing.
+ *    - Properties: `id`, `key`, `value`, `category`, `note`, timestamps (`created_at`, `updated_at`, `deleted_at`).
+ *    - Casts: `value` to `EncryptedCast`, `category` to `CategoryEnum`.
+ *    - Relationships: `versions()` (HasMany), `audits()` (HasMany).
+ *    - Mutators: `setKeyAttribute()` for key validation.
+ *    - Boot Logic: Event listeners (`creating`, `saving`) for validation and key immutability.
  *
- * @property int $id The unique identifier of the configuration.
- * @property string $key The unique key identifying the configuration.
- * @property string|null $value The encrypted value of the configuration.
- * @property string|null $category The category of the configuration (optional).
- * @property string|null $note Additional notes about the configuration (optional).
- * @property \Illuminate\Support\Carbon|null $created_at Creation timestamp.
- * @property \Illuminate\Support\Carbon|null $updated_at Last update timestamp.
- * @property \Illuminate\Support\Carbon|null $deleted_at Soft delete timestamp.
+ * 🧩 Context: Used by `EloquentConfigDao` to interact with the `uconfig` database table.
+ *    Represents the persisted state of a configuration item.
+ *
+ * 🛠️ Usage: Instantiated and managed primarily through `EloquentConfigDao`. Application code
+ *    typically interacts with configuration via `UltraConfigManager` or the `UConfig` Facade,
+ *    not directly with this model.
+ *
+ * 💾 State: Represents a row in the `uconfig` database table.
+ *
+ * 🗝️ Key Features:
+ *    - `$table`: 'uconfig'.
+ *    - `$fillable`: Defines mass-assignable attributes.
+ *    - `$casts`: Handles automatic encryption/decryption of `value` and Enum casting for `category`.
+ *    - `SoftDeletes`: Ensures records are marked deleted rather than removed.
+ *    - Key Immutability: Prevents changing the `key` after creation via `boot()` logic.
+ *    - Relationships: Links to related version and audit history.
+ *
+ * 🚦 Signals:
+ *    - Throws `InvalidArgumentException` if `key` is invalid during set/create.
+ *    - Throws `LogicException` if an attempt is made to modify the `key` after creation.
+ *    - Eloquent events (`creating`, `created`, `saving`, `saved`, `updating`, `updated`, `deleting`, `deleted`, `restoring`, `restored`) are fired.
+ *
+ * 🛡️ Privacy (GDPR):
+ *    - Crucial for GDPR compliance due to the `EncryptedCast` on the `value` attribute, ensuring configuration values are encrypted at rest in the database.
+ *    - The `key`, `category`, `note` are stored in plain text – avoid storing PII in these fields.
+ *    - The model itself doesn't store `userId`, but links to `UltraConfigAudit` which does.
+ *    - `@privacy-internal`: Stores configuration `key`, `category`, `note` (plain text) and `value` (encrypted).
+ *    - `@privacy-feature`: Automatic encryption at rest for the `value` field via `EncryptedCast`.
+ *
+ * 🤝 Dependencies:
+ *    - `EncryptedCast`: For value encryption/decryption.
+ *    - `CategoryEnum`: For category value mapping.
+ *    - `UltraConfigVersion`, `UltraConfigAudit`: For relationships.
+ *    - `UltraConfigModelFactory`: For testing.
+ *    - `LoggerInterface` (Optional): If logging within boot events without Facades is desired.
+ *    - (Implicit) Laravel Database connection and Eloquent subsystem.
+ *
+ * 🧪 Testing:
+ *    - Use the associated Factory (`UltraConfigModelFactory`) to create instances in tests.
+ *    - Verify CRUD operations via DAO tests.
+ *    - Test the `EncryptedCast` separately or via integration tests verifying DB values are encrypted.
+ *    - Test the `CategoryEnum` casting.
+ *    - Test relationships (`versions`, `audits`).
+ *    - Test key validation in `setKeyAttribute`.
+ *    - Test key immutability logic in `boot()` method (ensure exception is thrown on update attempt).
+ *    - Test soft delete and restoration.
+ *
+ * 💡 Logic:
+ *    - Standard Eloquent model setup.
+ *    - Key immutability enforced in the `saving` event listener.
+ *    - Validation of key format in the `setKeyAttribute` mutator.
+ *    - Automatic data handling via Eloquent casts is preferred over manual logic where possible.
+ *
+ * @property-read int $id
+ * @property string $key Unique configuration key. Cannot be changed after creation.
+ * @property mixed $value Configuration value (stored encrypted).
+ * @property ?CategoryEnum $category Configuration category (cast to Enum).
+ * @property ?string $note Optional descriptive note.
+ * @property ?\Illuminate\Support\Carbon $created_at
+ * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at Soft delete timestamp.
+ *
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, UltraConfigVersion> $versions Version history.
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, UltraConfigAudit> $audits Audit history.
+ *
+ * @package Ultra\UltraConfigManager\Models
  */
 class UltraConfigModel extends Model
 {
     use SoftDeletes, HasFactory;
 
     /**
-     * The table associated with the model.
-     *
+     * 💾 The database table used by the model.
      * @var string
      */
     protected $table = 'uconfig';
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<string>
+     * ✍️ The attributes that are mass assignable.
+     * @var array<int, string>
      */
     protected $fillable = [
         'key',
@@ -49,116 +129,136 @@ class UltraConfigModel extends Model
     ];
 
     /**
-     * The attributes that should be cast.
-     *
+     * 🎭 The attributes that should be cast to native types or custom classes.
+     * Handles encryption for 'value' and Enum for 'category'.
      * @var array<string, string>
      */
     protected $casts = [
         'value' => EncryptedCast::class,
-        'category' => CategoryEnum::class, // Cast al nostro Enum
+        'category' => CategoryEnum::class,
+        'deleted_at' => 'datetime', // Explicit cast for soft delete timestamp
     ];
 
     /**
-     * Summary of newFactory
-     * @return \Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory
+     * 🏭 Specifies the factory class name for the model.
+     * @var string
      */
-    protected static function newFactory()
+    protected static string $factory = UltraConfigModelFactory::class;
+
+    /**
+     * 🔗 Defines the relationship to the configuration's version history.
+     * One configuration has many versions.
+     *
+     * @return HasMany<UltraConfigVersion>
+     */
+    public function versions(): HasMany
     {
-        return \Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory::new();
+        return $this->hasMany(UltraConfigVersion::class, 'uconfig_id', 'id');
     }
 
     /**
-     * Get the versions associated with this configuration.
+     * 🔗 Defines the relationship to the configuration's audit history.
+     * One configuration has many audit records.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany<UltraConfigAudit>
      */
-    public function versions()
+    public function audits(): HasMany
     {
-        return $this->hasMany(UltraConfigVersion::class, 'uconfig_id');
+        return $this->hasMany(UltraConfigAudit::class, 'uconfig_id', 'id');
     }
 
     /**
-     * Set the configuration key attribute with validation.
+     * 🛡️ Mutator for the 'key' attribute.
+     * Validates the key format before setting it.
      *
-     * Ensures the key adheres to strict formatting rules to prevent invalid or
-     * malicious input from being stored.
-     *
-     * @param string $value The key to set.
-     * @throws \InvalidArgumentException If the key format is invalid.
+     * @param string $value The proposed key value.
      * @return void
+     * @throws InvalidArgumentException If the key format is invalid.
      */
-    public function setKeyAttribute($value)
+    public function setKeyAttribute(string $value): void
     {
         if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $value)) {
-            UltraLog::error('UCM Action', "Invalid configuration key format: {$value}");
-            throw new \InvalidArgumentException("Configuration key must be alphanumeric with allowed characters: _ . -");
+            // Log the error if a logger is available (see boot method)
+            static::getLogger()?->error('UCM Model: Invalid configuration key format attempted.', ['key' => $value]);
+            throw new InvalidArgumentException("Configuration key must be alphanumeric with allowed characters: _ . -");
         }
         $this->attributes['key'] = $value;
     }
 
     /**
-     * Boot the model and add global scope protections.
-     *
-     * This method ensures that only valid configurations are manipulated and logs
-     * any anomalies during the model's lifecycle.
+     * 🚀 Boots the model and registers event listeners for validation and immutability.
+     * Handles logging via an optionally injected logger.
      *
      * @return void
      */
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        // Log creation attempts for auditing
-        static::creating(function ($model) {
+        $logger = static::getLogger(); // Get logger once
+
+        // --- Event Listener: 'creating' ---
+        static::creating(function (self $model) use ($logger) {
+            // Validate key presence (already validated by mutator for format if set directly)
             if (empty($model->key)) {
-                UltraLog::error('UCM Action', 'Attempt to create configuration without a key');
-                throw new \InvalidArgumentException('Configuration key cannot be empty');
+                $logger?->error('UCM Model: Attempt to create configuration without a key.');
+                throw new InvalidArgumentException('Configuration key cannot be empty during creation.');
             }
-            UltraLog::info('UCM Action', "Creating configuration with key: {$model->key}");
+            $logger?->info('UCM Model: Creating configuration.', ['key' => $model->key]);
         });
 
-        // Log updates for traceability
-        static::updating(function ($model) {
-            UltraLog::info('UCM Action', "Updating configuration with key: {$model->key}");
+        // --- Event Listener: 'updating' ---
+        static::updating(function (self $model) use ($logger) {
+            $logger?->info('UCM Model: Updating configuration.', ['key' => $model->key, 'id' => $model->id]);
         });
 
-        /**
-         * 🔐 Protection of the `key` field
-         *
-         * Hook on model save to prevent changes to the `key` field after creation.
-         *
-         * ✔ During creation (`$model->exists === false`), the `key` can be set.
-         * ❌ After creation, any attempt to modify it triggers a `LogicException`.
-         *
-         * ✅ Goal:
-         *   - Maintain the logical integrity of the configuration.
-         *   - Avoid traceability issues with versioning and auditing.
-         *   - Prevent "silent" changes that could corrupt dependencies.
-         *
-         * 🪵 Logging:
-         *   - Every blocked attempt is logged with `UltraLog::debug()` for traceability.
-         *
-         * 📚 See also:
-         *   - UCMModelTest.php → Automated test to ensure the behavior.
-         *
-         * 🏷️ Tags:
-         *   #laravel #model-hook #immutability #ucm #logic-guard #ultraecosystem
-         */
-        static::saving(function ($model) {
-            if (!$model->exists && $model->isDirty('key')) {
-                // Allow setting key on first save
-                return;
-            }
-        
-            if ($model->isDirty('key')) {
-                UltraLog::debug('UCM Model', 'Saving model', [
-                    'exists' => $model->exists,
-                    'dirty' => $model->getDirty(),
-                    'wasRecentlyCreated' => $model->wasRecentlyCreated,
-                ]);
-                throw new \LogicException('Configuration key cannot be modified after creation');
+        // --- Event Listener: 'saving' ---
+        // Enforces key immutability after creation.
+        static::saving(function (self $model) use ($logger) {
+            // Check if the model exists (i.e., not being created) AND the key attribute is dirty (changed)
+            if ($model->exists && $model->isDirty('key')) {
+                 $originalKey = $model->getOriginal('key');
+                 $logger?->error('UCM Model: Attempted to modify immutable key after creation.', [
+                     'id' => $model->id,
+                     'original_key' => $originalKey,
+                     'attempted_key' => $model->key,
+                 ]);
+                // Prevent the save operation by throwing an exception
+                throw new LogicException("Configuration key ('{$originalKey}') cannot be modified after creation.");
             }
         });
-        
+
+         // --- Event Listener: 'deleted' --- (Example of logging delete)
+         static::deleted(function (self $model) use ($logger) {
+            $logger?->info('UCM Model: Configuration soft-deleted.', ['key' => $model->key, 'id' => $model->id]);
+         });
+
+         // --- Event Listener: 'restored' --- (Example of logging restore)
+         static::restored(function (self $model) use ($logger) {
+            $logger?->info('UCM Model: Configuration restored.', ['key' => $model->key, 'id' => $model->id]);
+         });
+    }
+
+    /**
+     * 📝 Helper method to safely get a Logger instance from the service container.
+     * Allows logging within static boot methods without direct Facade dependency.
+     * Returns null if the logger cannot be resolved (e.g., outside Laravel context).
+     *
+     * @return LoggerInterface|null
+     * @internal
+     */
+    protected static function getLogger(): ?LoggerInterface
+    {
+        // Check if the 'app' function exists and the container has the logger bound
+        if (function_exists('app') && app()->bound(LoggerInterface::class)) {
+            try {
+                return app(LoggerInterface::class);
+            } catch (Throwable $e) {
+                // Silently ignore if logger resolution fails
+                error_log('UCM Model: Failed to resolve LoggerInterface: ' . $e->getMessage()); // Log to PHP error log as fallback
+                return null;
+            }
+        }
+        return null;
     }
 }

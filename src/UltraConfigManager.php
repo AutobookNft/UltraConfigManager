@@ -1,663 +1,599 @@
 <?php
 
+/**
+ * 📜 Oracode Class: UltraConfigManager
+ *
+ * @package         Ultra\UltraConfigManager
+ * @version         1.2.0 // Incremented version for UI/DTO methods addition
+ * @author          Fabio Cherici
+ * @copyright       2024 Fabio Cherici
+ * @license         MIT
+ */
+
 namespace Ultra\UltraConfigManager;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator; // Needed for manual pagination
+use Illuminate\Support\Collection as IlluminateCollection;
+use Psr\Log\LoggerInterface;
+use Throwable;
+use Ultra\ErrorManager\Facades\UltraError; // Keep for potential future use? No, remove if not used.
 use Ultra\UltraConfigManager\Constants\GlobalConstants;
 use Ultra\UltraConfigManager\Dao\ConfigDaoInterface;
-use Ultra\UltraConfigManager\Models\UltraConfigModel;
-use Ultra\UltraConfigManager\Models\UltraConfigVersion;
-use Ultra\UltraConfigManager\Models\UltraConfigAudit;
+use Ultra\UltraConfigManager\DataTransferObjects\ConfigAuditData;
+use Ultra\UltraConfigManager\DataTransferObjects\ConfigDisplayData;
+use Ultra\UltraConfigManager\DataTransferObjects\ConfigEditData;
+use Ultra\UltraConfigManager\Enums\CategoryEnum;
+use Ultra\UltraConfigManager\Exceptions\ConfigNotFoundException;
+use Ultra\UltraConfigManager\Exceptions\PersistenceException;
 use Ultra\UltraConfigManager\Services\VersionManager;
-use Ultra\UltraLogManager\Facades\UltraLog;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+
+
 
 /**
- * UltraConfigManager – Oracoded Edition
+ * 🎯 Purpose: Central orchestrator for managing application configuration within the Ultra ecosystem.
+ *    Provides a unified API for retrieving, setting, and deleting configuration values,
+ *    while ensuring data integrity, security (encryption via DAO/Model), versioning, auditing,
+ *    and cache consistency. It acts as the primary programmatic interface to UCM.
  *
- * 🎯 Central orchestrator for secure, testable, and auditable config state.
- * 🧱 Fully modular, mutation-aware and cache-controllable.
- * 🧪 Extensively test-driven and injection-complete.
- * 🔥 Critical for consistency, rollback integrity and observability.
- * 🧩 Compliant with Oracode/UDP standards and semantic traceability.
+ * 🧱 Structure:
+ *    - Holds configuration state in memory (`$config` array).
+ *    - Interacts with persistent storage via `ConfigDaoInterface`.
+ *    - Manages configuration versions using `VersionManager`.
+ *    - Interacts with Laravel's cache via `CacheRepository`.
+ *    - Logs activities using `LoggerInterface`.
+ *    - Provides public API methods (`get`, `set`, `delete`, `has`, `all`, `reload`, `validateConstant`, `getAllEntriesForDisplay`, `findEntryForEdit`, `findEntryForAudit`).
+ *    - Internal methods handle loading (`loadConfig`, `loadFromDatabase`, `mergeWithEnvironment`) and cache management (`isCacheEnabled`, `getCacheTtl`, `refreshConfigCache`).
+ *
+ * 🧩 Context: Instantiated typically as a singleton by `UConfigServiceProvider`. Used throughout
+ *    the application (directly or via the `UConfig` Facade) wherever configuration access is needed.
+ *    Operates within a Laravel application context, relying on injected Cache and Logger.
+ *
+ * 🛠️ Usage:
+ *    `UConfig::get('key', 'default')`
+ *    `UConfig::set('key', 'value', 'category', Auth::id())`
+ *    `UConfig::delete('key', Auth::id())`
+ *    `UConfig::all()`
+ *    `UConfig::reload()`
+ *    `$manager->getAllEntriesForDisplay()`
+ *    `$manager->findEntryForEdit($id)`
+ *    `$manager->findEntryForAudit($id)`
+ *
+ * 💾 State:
+ *    - `$config`: In-memory cache of key => {value, category}.
+ *    - `$cacheRepository`: External cache state.
+ *    - Database State: Managed via `configDao`.
+ *
+ * 🗝️ Key Methods:
+ *    - `get`, `set`, `delete`: Core CRUD operations.
+ *    - `has`, `all`: Read operations on in-memory state.
+ *    - `loadConfig`, `reload`: State hydration management.
+ *    - `refreshConfigCache`: External cache synchronization.
+ *    - `validateConstant`: Constant validation helper.
+ *    - `getAllEntriesForDisplay`, `findEntryForEdit`, `findEntryForAudit`: Data retrieval for UI/DTOs.
+ *
+ * 🚦 Signals:
+ *    - Returns values, DTOs, Collections, Paginators.
+ *    - Throws `InvalidArgumentException`, `ConfigNotFoundException`, `DuplicateKeyException`, `PersistenceException`.
+ *    - Logs actions and errors via `LoggerInterface`.
+ *    - Interacts with cache store (`CACHE_KEY`).
+ *    - Triggers audit/version record creation via DAO.
+ *
+ * 🛡️ Privacy (GDPR):
+ *    - Manages potentially sensitive configuration data (encrypted at rest via Model).
+ *    - Handles `userId` for auditing (passed to DAO).
+ *    - `@privacy-input`: Accepts optional `$userId` in `set`/`delete`.
+ *    - `@privacy-internal`: Passes `$userId` to `configDao`. Relies on DAO/Model for secure storage.
+ *    - `@privacy-delegated`: Encryption handled by Model. `userId` sensitivity context depends on host app.
+ *    - Recommendation: Avoid storing direct PII in configuration values.
+ *
+ * 🤝 Dependencies:
+ *    - `ConfigDaoInterface`, `VersionManager`, `GlobalConstants`, `CacheRepository`, `LoggerInterface`, `CategoryEnum`, DTOs, Custom Exceptions.
+ *    - (Implicit) Laravel Application Context.
+ *
+ * 🧪 Testing:
+ *    - Unit Test: Mock all dependencies. Test logic of public methods. Verify mock calls.
+ *    - Integration Test: Use `RefreshDatabase`. Test against real DB connection and cache driver. Verify state changes.
+ *
+ * 💡 Logic:
+ *    - Loading: Cache -> DB -> Env (merge).
+ *    - Mutation (`set`/`delete`): DB (via DAO including transaction/version/audit) -> Memory -> Cache.
+ *    - Error Handling: Catch specific and generic exceptions, log, re-throw custom exceptions.
+ *    - Caching: Single key, TTL, locking for refresh, incremental updates.
+ *    - Validation: Key format, value type, category enum, constants.
+ *
+ * @package     Ultra\UltraConfigManager
  */
 class UltraConfigManager
 {
     /**
-     * 🧱 @structural In-memory configuration array
-     *
-     * Holds the current state of the loaded configuration. This array is populated
-     * during boot via `loadConfig()`, and optionally refreshed via `reload()` or
-     * cache invalidation processes.
-     *
-     * @var array<string, array{value: mixed, category?: string}>
+     * @var array<string, array{value: mixed, category?: string|null}>
      */
     private array $config = [];
-
-    /**
-     * 🧱 @structural Global constants handler
-     *
-     * Provides access to shared constant values used across the configuration
-     * logic, especially for fallback identity and system-wide markers.
-     *
-     * @var GlobalConstants
-     */
-    protected GlobalConstants $globalConstants;
-
-    /**
-     * 🧱 @structural Version manager
-     *
-     * Manages the generation and assignment of sequential version numbers
-     * for persisted configuration changes.
-     *
-     * @var VersionManager
-     */
-    protected VersionManager $versionManager;
-
-    /**
-     * 🧩 @configurable Cache key used to store and retrieve serialized config
-     *
-     * This value is referenced by both runtime operations and test scenarios,
-     * and must remain stable to avoid cache fragmentation.
-     *
-     * @var string
-     */
+    protected readonly ConfigDaoInterface $configDao;
+    protected readonly VersionManager $versionManager;
+    protected readonly GlobalConstants $globalConstants;
+    protected readonly CacheRepository $cacheRepository;
+    protected readonly LoggerInterface $logger;
+    protected readonly int $cacheTtl;
+    protected readonly bool $cacheEnabled;
     private const CACHE_KEY = 'ultra_config.cache';
 
-    /**
-     * 🧱 @structural Config DAO
-     *
-     * DAO abstraction used for retrieving and persisting configuration records
-     * from the underlying database layer.
-     *
-     * @var ConfigDaoInterface
-     */
-    protected ConfigDaoInterface $configDao;
-
-    /**
-     * 🧪 Test Override: TTL value for cache simulation
-     *
-     * This field allows test classes to override the default TTL used when
-     * caching configuration. It bypasses the call to `config('uconfig.cache.ttl')`,
-     * which would fail outside of Laravel’s container.
-     *
-     * 🧩 Overrides dynamic behavior from env/config
-     * 🔄 Alters cache control logic in test mode
-     *
-     * @var int|null
-     * @configurable
-     * @mutation
-     */
-    protected ?int $testCacheTtl = null;
-
-    /**
-     * ⛓️ Oracular Control Flag (Testing Only)
-     *
-     * Forces the cache behavior in test environments where Laravel's config() is unavailable.
-     * 🧪 Only settable via testingForceCache()
-     * 🔒 Not to be used in production
-     * 🧱 Structural override point for testing scenarios
-     *
-     * @var bool|null
-     * @test
-     * @structural
-     */
-    protected ?bool $testCacheFlag = null;
-
-    /**
-     * 🔌 Log Toggle Flag (for Test Environments)
-     *
-     * Controls whether internal logging via UltraLog is allowed.
-     * In standalone PHPUnit executions where Laravel’s Facade root
-     * is not available, this flag can be disabled to prevent crashes.
-     *
-     * 🧪 Used to bypass UltraLog in pure test runners
-     * 🧱 Structural control of side effects
-     *
-     * @var bool
-     */
-    protected bool $logEnabled = true;
-
-
-     /**
-     * 🎯 Entry Point: UltraConfigManager constructor
-     *
-     * Initializes the core configuration engine for the Ultra ecosystem.
-     * Injects the required dependencies: GlobalConstants, VersionManager, and
-     * ConfigDaoInterface. Immediately triggers a configuration load, including
-     * database and environment merges, optionally cached.
-     *
-     * 🔐 Lifecycle entry for all configuration interactions
-     * 🧪 Fully testable: all injected dependencies can be mocked
-     * 🔄 Mutates internal config state via `loadConfig()`
-     * 🧱 Structurally prepares logging and semantic availability
-     *
-     * @param GlobalConstants $globalConstants Global constant provider (identity fallback, etc.)
-     * @param VersionManager $versionManager Versioning strategy manager
-     * @param ConfigDaoInterface $configDao Abstraction for database interaction layer
-     */
     public function __construct(
-        GlobalConstants $globalConstants,
-        VersionManager $versionManager,
         ConfigDaoInterface $configDao,
+        VersionManager $versionManager,
+        GlobalConstants $globalConstants,
+        CacheRepository $cacheRepository,
+        LoggerInterface $logger,
+        int $cacheTtl = 3600,
+        bool $cacheEnabled = true,
+        bool $loadOnInit = true
     ) {
-
-        UltraLog::info('UCM Action', 'UltraConfigManager initialized');
-
-        $this->globalConstants = $globalConstants;
-        $this->versionManager = $versionManager;
         $this->configDao = $configDao;
+        $this->versionManager = $versionManager;
+        $this->globalConstants = $globalConstants;
+        $this->cacheRepository = $cacheRepository;
+        $this->logger = $logger;
+        $this->cacheTtl = $cacheTtl;
+        $this->cacheEnabled = $cacheEnabled;
 
-        // ⛓️ Load config only if running inside a full Laravel context
-        if (app()->bound('cache') && app()->bound('db')) {
-            $this->loadConfig();
-        }
-    }
-
-    /**
-     * ⛓️ Oracular Utility: Testing-only Cache Flag Injection
-     * Allows external control over the internal cache decision logic,
-     * bypassing the Laravel config() call for test environments.
-     *
-     * 🔐 Usage Context: PHPUnit, no Laravel container
-     * 🧪 Enables precise control of test scenario setup
-     * 🎯 Target: isCacheEnabled() logic branch
-     * 🧱 Structural: Supports modular testing isolation
-     */
-    public function testingForceCache(bool $enabled): void
-    {
-        // dd("testingForceCache", $enabled);
-        $this->testCacheFlag = $enabled;
-    }
-
-    /**
-     * ⛓️ Oracular Hook: Inject TTL for cache logic in test environment
-     *
-     * This method injects a TTL override value that replaces the Laravel
-     * config-based TTL in test environments. Essential for running UCM tests
-     * outside of the application context.
-     *
-     * 🔐 Used only in test scaffolding
-     * 🔄 Alters the TTL retrieval logic
-     *
-     * @param int $ttl Override value for cache TTL
-     * @configurable
-     * @mutation
-     * @test
-     */
-    public function testingForceCacheTtl(int $ttl): void
-    {
-        $this->testCacheTtl = $ttl;
-    }
-
-    /**
-     * ⛓️ Oracular Resolution: Determine effective cache TTL
-     *
-     * Returns the TTL for config cache depending on test overrides.
-     * Avoids calling Laravel's config() in non-container environments.
-     *
-     * 🧩 Branches on test state
-     * 🔄 Modifies cache persistence logic
-     *
-     * @return int Effective TTL to use in cache layer
-     * @configurable
-     * @mutation
-     * @signature loadConfig_uses_cache_when_enabled
-     * @test
-     */
-    private function getCacheTtl(): int
-    {
-        return $this->testCacheTtl ?? 3600;
-    }
-
-    /**
-     * ⛓️ Oracular Decision Gateway: Cache Strategy Resolution
-     * Returns whether cache should be used based on testing override
-     * or default Laravel configuration fallback.
-     *
-     * 🔐 Conditional source: testCacheFlag or config('uconfig.cache.enabled')
-     * 🧠 Branching logic controlling cache path
-     * 🧷 Fallback logic: defaults to true if config not available
-     */
-    private function isCacheEnabled(): bool
-    {
-        // dd('isCacheEnabled', $this->testCacheFlag);
-        return $this->testCacheFlag ?? true;
-    }
-
-    /**
-     * 🧷 Fallback Loader: Merge environment variables into in-memory config
-     *
-     * Iterates over the raw environment (`$_ENV`) and injects all keys
-     * not already present in `$this->config`, preserving database priority.
-     *
-     * This method is used to ensure that environment-defined configuration
-     * values are never lost, while still allowing override from persistent storage.
-     *
-     * 🔐 Used at boot as secondary config source
-     * 🧪 Silent by design, but traceable if logging is enabled
-     * 🧱 Structural fallback layer for config merge logic
-     * 🔄 Mutates in-memory `$this->config`
-     *
-     * @return void
-     */
-    private function loadFromEnv(): void
-    {
-        foreach ($_ENV as $key => $value) {
-            if (!array_key_exists($key, $this->config)) {
-                $this->config[$key] = ['value' => $value];
-            }
-        }
-
-        UltraLog::debug('UCM Action', 'Environment variables merged into configurations');
-
-    }
-
-    /**
-     * 🔄 Configuration Bootstrap Loader
-     *
-     * Entry point for hydration of in-memory config. It determines whether
-     * to use the cache or to rehydrate the configuration directly from the
-     * database and environment. Also logs the method of retrieval.
-     *
-     * 🧠 Decides strategy via `isCacheEnabled()`
-     * 🧩 Uses TTL determined by `getCacheTtl()`
-     * 🧪 Supports test override paths for both logic branches
-     * 🧷 Internally safe for Fake DAO and test environment bypass
-     * 🧱 Mutates `$this->config` as primary result
-     * 📦 May retrieve data from Laravel cache layer
-     *
-     * @return void
-     * @entrypoint
-     * @mutation
-     * @cache
-     * @fallback
-     */
-    public function loadConfig(): void
-    {
-        UltraLog::info('UCM Action', 'Loading configurations');
-
-        $useCache = $this->isCacheEnabled();
-        $cacheKey = self::CACHE_KEY;
-        $ttl = $this->getCacheTtl();
-
-        if ($useCache && app()->bound('cache')) {
-            $cached = Cache::get($cacheKey);
-
-            if (is_array($cached) && !empty($cached)) {
-                $this->config = $cached;
-                UltraLog::debug('UCM Action', 'Configurations loaded from cache');
+        $this->logger->info('UCM Lifecycle: Initializing UltraConfigManager.', [
+            'cacheEnabled' => $this->cacheEnabled,
+            'cacheTtl' => $this->cacheTtl,
+        ]);
+        if ($loadOnInit) {
+            if (function_exists('app') && (!app()->bound('db') || !app()->bound('cache'))) {
+                 $this->logger->warning('UCM Lifecycle: DB or Cache services not bound. Skipping initial config load.', [
+                    'db_bound' => function_exists('app') && app()->bound('db'),
+                    'cache_bound' => function_exists('app') && app()->bound('cache'),
+                 ]);
             } else {
-                $this->config = $this->loadFromDatabase();
-                $this->loadFromEnv();
-                Cache::put($cacheKey, $this->config, $ttl);
-                UltraLog::debug('UCM Action', "Configurations loaded fresh and cached for TTL: {$ttl}");
+                $this->loadConfig();
             }
         } else {
-            $this->config = $this->loadFromDatabase();
-            $this->loadFromEnv();
-            UltraLog::debug('UCM Action', 'Configurations loaded without cache');
+             $this->logger->info('UCM Lifecycle: Initial config load skipped via constructor flag.');
         }
     }
 
-    /**
-     * ⛓️ Oracular Behavior: Load configurations from database
-     *
-     * Retrieves all persisted configurations from the DB and maps them to the
-     * in-memory format. Handles missing table and null values gracefully.
-     *
-     * ⚠️ Laravel's `Schema::hasTable()` is a facade that requires the application
-     * container and a bound DB connection. In test environments (e.g., CLI PHPUnit),
-     * facades may not be initialized, resulting in a `Facade root not set` exception.
-     * To prevent this, we check `app()->bound('db')` and `app()->bound('schema')`
-     * before any access to facades inside closures.
-     *
-     * 🧷 Used as fallback when cache is disabled
-     * 🔐 Safe for test execution without Laravel container
-     * 🧱 Part of loadConfig() flow
-     * 🧪 Covered by: loadConfig_pulls_from_database_when_cache_disabled
-     * 🚨 Handles: table absence, DAO failure, test isolation
-     *
-     * @return array<string, array<string, mixed>> In-memory configuration map
-     */
-    private function loadFromDatabase(): array
+    private function isCacheEnabled(): bool
     {
-        UltraLog::info('UCM Action', 'Loading configurations from database');
+        return $this->cacheEnabled;
+    }
 
-        $configArray = [];
+    private function getCacheTtl(): int
+    {
+        return $this->cacheTtl;
+    }
 
-        // 🔐 Test-safe bypass for fakes and sandbox environments
-        if ($this->configDao->shouldBypassSchemaChecks()) {
-            UltraLog::debug('UCM Action', 'DAO requested schema bypass (likely test)');
-        } elseif (!app()->bound('db') || !app()->bound('schema') || !Schema::hasTable('uconfig')) {
-            UltraLog::warning('UCM Action', "Schema or DB not available, or 'uconfig' table missing – skipping database load");
-            return $configArray;
+    public function loadConfig(): void
+    {
+        $this->logger->info('UCM Load: Starting configuration load sequence.');
+        $useCache = $this->isCacheEnabled();
+        $cacheKey = self::CACHE_KEY;
+
+        if ($useCache) {
+            $this->logger->debug('UCM Load: Cache is enabled. Attempting to load from cache.', ['key' => $cacheKey]);
+            try {
+                $cachedConfig = $this->cacheRepository->get($cacheKey);
+                if (is_array($cachedConfig)) {
+                    $this->config = $cachedConfig;
+                    $this->logger->info('UCM Load: Configuration successfully loaded from cache.', ['key' => $cacheKey, 'count' => count($cachedConfig)]);
+                    return;
+                } else {
+                     $this->logger->info('UCM Load: Cache miss or invalid data type in cache.', ['key' => $cacheKey, 'type' => gettype($cachedConfig)]);
+                }
+            } catch (Throwable $e) {
+                $this->logger->error('UCM Load: Error reading from cache. Proceeding with DB load.', [
+                    'key' => $cacheKey, 'exception' => $e::class, 'message' => $e->getMessage(),
+                ]);
+            }
+        } else {
+            $this->logger->info('UCM Load: Cache is disabled. Loading directly from primary sources.');
         }
 
+        $this->logger->info('UCM Load: Loading configuration from database and environment.');
+        $dbConfig = $this->loadFromDatabase();
+        $mergedConfig = $this->mergeWithEnvironment($dbConfig);
+        $this->config = $mergedConfig;
+        $this->logger->info('UCM Load: Configuration loaded from DB/Env.', ['db_count' => count($dbConfig), 'merged_count' => count($mergedConfig)]);
+
+        if ($useCache) {
+            $ttl = $this->getCacheTtl();
+            try {
+                $success = $this->cacheRepository->put($cacheKey, $this->config, $ttl);
+                if ($success) {
+                    $this->logger->info('UCM Load: Fresh configuration stored in cache.', ['key' => $cacheKey, 'ttl' => $ttl]);
+                } else {
+                    $this->logger->warning('UCM Load: Failed to store fresh configuration in cache.', ['key' => $cacheKey]);
+                }
+            } catch (Throwable $e) {
+                $this->logger->error('UCM Load: Error writing to cache after fresh load.', [
+                    'key' => $cacheKey, 'exception' => $e::class, 'message' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    private function loadFromDatabase(): array
+    {
+        $this->logger->debug('UCM DB Load: Requesting all configurations from DAO.');
+        $configArray = [];
         try {
             $configs = $this->configDao->getAllConfigs();
-
+            $loadedCount = 0;
+            $ignoredCount = 0;
             foreach ($configs as $config) {
                 if ($config->value !== null) {
                     $configArray[$config->key] = [
                         'value' => $config->value,
-                        'category' => $config->category,
+                        'category' => $config->category?->value,
                     ];
+                    $loadedCount++;
                 } else {
-                    UltraLog::warning('UCM Action', "Configuration with key {$config->key} has a null value and will be ignored");
+                    $this->logger->warning('UCM DB Load: Ignoring config key due to null value.', ['key' => $config->key]);
+                    $ignoredCount++;
                 }
             }
-
-            UltraLog::info('UCM Action', 'Configurations loaded from database successfully');
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Error loading configurations from database: {$e->getMessage()}");
+            $this->logger->info('UCM DB Load: Configurations loaded from database.', ['loaded' => $loadedCount, 'ignored_null' => $ignoredCount]);
+        } catch (Throwable $e) {
+            $this->logger->error('UCM DB Load: Error loading configurations from database. Returning empty set.', [
+                'exception' => $e::class, 'message' => $e->getMessage(),
+            ]);
         }
-
-        // 🔄 Commit loaded config to memory
-        $this->config = $configArray;
         return $configArray;
     }
 
-    /**
-     * Determine if a given config key exists.
-     *
-     * @param  string  $key
-     * @return bool
-     */
-    public function has(string $key): bool
+    private function mergeWithEnvironment(array $dbConfig): array
     {
-        return $this->get($key, null, true) !== null;
-    }
-
-
-    /**
-     * 🎯 Retrieve a configuration value from memory
-     *
-     * Accesses a config value by key from the in-memory `$this->config` map,
-     * falling back to a default if the key is not found.
-     *
-     * Does **not** trigger database or cache access – expects hydration via `loadConfig()`.
-     * Logs are suppressed if `app()->bound('log')` is false (common in test CLI).
-     *
-     * 🧠 Silent mode disables all log output
-     * 🔐 Safe for CLI test execution (no facades unless bound)
-     * 🧪 Covered by: loadConfig_uses_cache_when_enabled
-     * 📦 Expects `$this->config` to be already populated
-     *
-     * @param string $key The configuration key to retrieve
-     * @param mixed $default Default value if key is missing
-     * @param bool $silent If true, suppresses log output
-     * @return mixed Configuration value or default
-     *
-     * @readonly
-     * @resolver
-     * @log
-     */
-    public function get(string $key, mixed $default = null, bool $silent = false): mixed
-    {
-        $value = $this->config[$key]['value'] ?? $default;
-
-        // 🧷 Log only if log facade is available (test-mode safe)
-        if (!$silent && app()->bound('log')) {
-            if ($value === $default) {
-                UltraLog::info('UCM Action', "Config key '{$key}' not found. Using default: " . json_encode($default));
-            } else {
-                UltraLog::debug('UCM Action', "Retrieved config key '{$key}' with value: " . json_encode($value));
+        $this->logger->debug('UCM Env Merge: Merging environment variables with DB config.');
+        $mergedConfig = $dbConfig;
+        $envCount = 0;
+        foreach ($_ENV as $key => $value) {
+            if (!array_key_exists($key, $mergedConfig)) {
+                $mergedConfig[$key] = ['value' => $value, 'category' => null];
+                $envCount++;
             }
         }
-
-        return $value;
+        $this->logger->info('UCM Env Merge: Environment variables merged.', ['added_count' => $envCount]);
+        return $mergedConfig;
     }
 
-    /**
-     * Set a configuration value.
-     *
-     * Updates the in-memory configuration, persists it to the database, and optionally records
-     * a version and audit entry. Ensures input validation and transactional integrity.
-     *
-     * @param string $key The configuration key (alphanumeric with _ . -).
-     * @param mixed $value The value to set (scalar, array, or null).
-     * @param string|null $category The category of the configuration (optional).
-     * @param object|null $user The user performing the action (optional).
-     * @param bool $version Whether to record a version entry (default: true).
-     * @param bool $audit Whether to record an audit entry (default: true).
-     * @throws \InvalidArgumentException If key or value is invalid.
-     * @throws \Exception If the operation fails.
-     * @return void
-     */
-    public function set(string $key, mixed $value, ?string $category = null, ?object $user = null, bool $version = true, bool $audit = true): void
+    public function has(string $key): bool
     {
+        $exists = array_key_exists($key, $this->config);
+        $this->logger->debug('UCM Check: Configuration key check.', ['key' => $key, 'exists' => $exists]);
+        return $exists;
+    }
+
+    public function get(string $key, mixed $default = null, bool $silent = false): mixed
+    {
+        if (array_key_exists($key, $this->config)) {
+            $value = $this->config[$key]['value'];
+            if (!$silent) {
+                $logValue = is_scalar($value) || is_null($value) ? $value : '[' . gettype($value) . ']';
+                $this->logger->debug('UCM Get: Retrieved configuration key.', ['key' => $key, 'value_type' => gettype($value)]);
+            }
+            return $value;
+        } else {
+            if (!$silent) {
+                $this->logger->debug('UCM Get: Configuration key not found. Returning default.', ['key' => $key]);
+            }
+            return $default;
+        }
+    }
+
+    public function set(
+        string $key,
+        mixed $value,
+        ?string $category = null,
+        ?int $userId = null,
+        bool $version = true,
+        bool $audit = true
+    ): void {
+        $this->logger->info('UCM Set: Attempting to set configuration.', ['key' => $key, 'category' => $category, 'has_value' => $value !== null]);
+
         if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $key)) {
-            UltraLog::error('UCM Action', "Invalid configuration key: {$key}");
+            $this->logger->error('UCM Set: Invalid key format.', ['key' => $key]);
             throw new \InvalidArgumentException("Configuration key must be alphanumeric with allowed characters: _ . -");
         }
         if (!is_scalar($value) && !is_null($value) && !is_array($value)) {
-            UltraLog::error('UCM Action', "Invalid configuration value type for key: {$key}");
-            throw new \InvalidArgumentException("Configuration value must be scalar, array, or null");
+            $this->logger->error('UCM Set: Invalid value type.', ['key' => $key, 'type' => gettype($value)]);
+            throw new \InvalidArgumentException("Configuration value must be scalar, array, or null.");
         }
+        $categoryEnum = CategoryEnum::tryFrom($category ?? '');
+        if ($category !== null && $category !== '' && $categoryEnum === null) {
+             $this->logger->error('UCM Set: Invalid category.', ['key' => $key, 'category' => $category]);
+             $validCategories = implode(', ', array_column(CategoryEnum::cases(), 'value'));
+             throw new \InvalidArgumentException("Invalid category '{$category}'. Valid options are: {$validCategories} or null/empty string.");
+        }
+        $validCategoryString = $categoryEnum?->value;
 
         try {
-            $this->config[$key] = ['value' => $value, 'category' => $category];
-            $config = $this->saveToUConfig($key, $value, $category);
-            if ($config) {
-                if ($version) $this->saveVersion($config, $value);
-                if ($audit) $this->saveAudit($config, 'updated', $value);
-            } else {
-                throw new \RuntimeException("Failed to persist configuration {$key}");
-            }
-            $this->refreshConfigCache($key);
-            UltraLog::info('UCM Action', "Configuration set successfully: {$key}");
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Failed to set configuration {$key}: {$e->getMessage()}");
-            throw $e;
-        }
-    }
+            $oldValue = $this->config[$key]['value'] ?? null;
+            $action = array_key_exists($key, $this->config) ? 'updated' : 'created';
 
-    /**
-     * Save a configuration to the database.
-     *
-     * Persists the configuration entry, creating or updating it as needed, with logging.
-     *
-     * @param string $key The configuration key.
-     * @param mixed $value The configuration value.
-     * @param string|null $category The configuration category.
-     * @return UltraConfigModel|null The saved model instance or null on failure.
-     */
-    private function saveToUConfig(string $key, mixed $value, ?string $category): ?UltraConfigModel
-    {
-        try {
-            $config = $this->configDao->getConfigByKey($key);
-            $data = ['value' => $value, 'category' => $category];
-
-            if ($config) {
-                if ($config->trashed()) $config->restore();
-                $config = $this->configDao->updateConfig($config, $data);
-            } else {
-                $data['key'] = $key;
-                $config = $this->configDao->createConfig($data);
-            }
-
-            UltraLog::info('UCM Action', "Configuration saved to database: {$key}");
-            return $config;
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Error saving configuration {$key} to database: {$e->getMessage()}");
-            return null;
-        }
-    }
-
-    /**
-     * Save a version entry for a configuration.
-     *
-     * Records a new version of the configuration with the provided value.
-     *
-     * @param UltraConfigModel $config The configuration model instance.
-     * @param mixed $value The value to record.
-     * @return void
-     */
-    private function saveVersion(UltraConfigModel $config, mixed $value): void
-    {
-        try {
-            $this->configDao->createVersion($config, $this->versionManager->getNextVersion($config->id));
-            UltraLog::info('UCM Action', "Version recorded for configuration: {$config->key}");
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Error registering version for configuration {$config->key}: {$e->getMessage()}");
-        }
-    }
-
-
-    /**
-     * Save an audit entry for a configuration change.
-     *
-     * Logs the action performed on the configuration with old and new values.
-     *
-     * @param UltraConfigModel $config The configuration model instance.
-     * @param string $action The action type (e.g., 'created', 'updated', 'deleted').
-     * @param mixed $newValue The new value of the configuration.
-     * @return void
-     */
-    private function saveAudit(UltraConfigModel $config, string $action, mixed $newValue): void
-    {
-        try {
-            $oldValue = $this->get($config->key);
-            $this->configDao->createAudit(
-                $config->id,
-                $action,
-                $oldValue,
-                $newValue,
-                Auth::id() ?? $this->globalConstants::NO_USER
+            $this->configDao->saveConfig(
+                key: $key,
+                value: $value,
+                category: $validCategoryString,
+                userId: $userId ?? $this->globalConstants::NO_USER,
+                createVersion: $version,
+                createAudit: $audit,
+                oldValueForAudit: $oldValue
             );
-            UltraLog::info('UCM Action', "Audit recorded for action {$action} on configuration: {$config->key}");
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Error registering audit for configuration {$config->key}: {$e->getMessage()}");
+
+             $this->config[$key] = ['value' => $value, 'category' => $validCategoryString];
+             $this->logger->debug('UCM Set: In-memory configuration updated.', ['key' => $key]);
+
+             $this->refreshConfigCache($key);
+
+             $this->logger->info('UCM Set: Configuration set successfully.', ['key' => $key, 'action' => $action]);
+
+        } catch (Throwable $e) {
+             $this->logger->error('UCM Set: Failed to set configuration due to persistence or caching error.', [
+                 'key' => $key, 'exception' => $e::class, 'message' => $e->getMessage(),
+             ]);
+             throw new \RuntimeException("Failed to set configuration key '{$key}'.", 0, $e);
         }
     }
 
-
-    /**
-     * Delete a configuration.
-     *
-     * Removes the configuration from memory and database (soft delete), with optional versioning and audit.
-     *
-     * @param string $key The configuration key to delete.
-     * @param bool $version Whether to record a version entry (default: true).
-     * @param bool $audit Whether to record an audit entry (default: true).
-     * @return void
-     */
-    public function delete(string $key, bool $version = true, bool $audit = true): void
+    public function delete(string $key, ?int $userId = null, bool $audit = true): void
     {
+        $this->logger->info('UCM Delete: Attempting to delete configuration.', ['key' => $key]);
+
         if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $key)) {
-            UltraLog::error('UCM Action', "Invalid configuration key for deletion: {$key}");
+            $this->logger->error('UCM Delete: Invalid key format.', ['key' => $key]);
             throw new \InvalidArgumentException("Configuration key must be alphanumeric with allowed characters: _ . -");
         }
 
-        unset($this->config[$key]);
-        $config = $this->configDao->getConfigByKey($key);
-
-        if ($config) {
-            try {
-                if ($audit) $this->saveAudit($config, 'deleted', null);
-                if ($version) $this->saveVersion($config, null);
-                $this->configDao->deleteConfig($config);
-                $this->refreshConfigCache($key);
-                UltraLog::info('UCM Action', "Configuration deleted: {$key}");
-            } catch (\Exception $e) {
-                UltraLog::error('UCM Action', "Error deleting configuration {$key}: {$e->getMessage()}");
-                throw $e;
+        try {
+            $existsInMemory = array_key_exists($key, $this->config);
+            if (!$existsInMemory) {
+                 $this->logger->warning('UCM Delete: Key not found in memory, attempting deletion in DB anyway.', ['key' => $key]);
             }
-        } else {
-            UltraLog::warning('UCM Action', "No configuration found to delete for key: {$key}");
+
+            $deleted = $this->configDao->deleteConfigByKey(
+                key: $key,
+                userId: $userId ?? $this->globalConstants::NO_USER,
+                createAudit: $audit
+            );
+
+            if ($deleted) {
+                unset($this->config[$key]);
+                $this->logger->debug('UCM Delete: Configuration removed from in-memory store.', ['key' => $key]);
+                $this->refreshConfigCache($key);
+                $this->logger->info('UCM Delete: Configuration deleted successfully.', ['key' => $key]);
+            } else {
+                 if ($existsInMemory) {
+                     $this->logger->error('UCM Delete: DAO failed to delete key, but it existed in memory. State might be inconsistent.', ['key' => $key]);
+                 } else {
+                     $this->logger->info('UCM Delete: Key not found in DB for deletion.', ['key' => $key]);
+                 }
+                 if ($existsInMemory) unset($this->config[$key]);
+                 $this->refreshConfigCache($key);
+            }
+
+        } catch (Throwable $e) {
+            $this->logger->error('UCM Delete: Failed to delete configuration due to persistence or caching error.', [
+                'key' => $key, 'exception' => $e::class, 'message' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException("Failed to delete configuration key '{$key}'.", 0, $e);
         }
     }
 
-    /**
-     * Retrieve all configuration values.
-     *
-     * Returns an array of all configuration values currently in memory.
-     *
-     * @return array<string, mixed> The configuration values.
-     */
     public function all(): array
     {
-        return array_map(fn($config) => $config['value'], $this->config);
+        $allValues = array_map(fn($configItem) => $configItem['value'], $this->config);
+        $this->logger->debug('UCM Get All: Returning all configuration values from memory.', ['count' => count($allValues)]);
+        return $allValues;
     }
 
-    /**
-     * Refresh the configuration cache.
-     *
-     * Updates the cache with the latest in-memory configurations, using a lock to prevent race conditions.
-     *
-     * @return void
-     * @throws \Exception If cache refresh fails.
-     */
     public function refreshConfigCache(?string $key = null): void
     {
-        $lock = Cache::lock('ultra_config_cache_lock', 10);
+        if (!$this->isCacheEnabled()) {
+            $this->logger->debug('UCM Cache Refresh: Cache is disabled, skipping refresh.');
+            return;
+        }
+        $cacheKey = self::CACHE_KEY;
+        $ttl = $this->getCacheTtl();
+        $lockKey = $cacheKey . '_lock';
+        $lockTimeout = 10;
+
+        $this->logger->debug('UCM Cache Refresh: Attempting cache refresh.', ['key' => $key ?? 'all']);
+
+        if ($key !== null) {
+            try {
+                $currentCache = $this->cacheRepository->get($cacheKey, []);
+                if (!is_array($currentCache)) $currentCache = [];
+
+                if (array_key_exists($key, $this->config)) {
+                    $currentCache[$key] = $this->config[$key];
+                    $logAction = 'Updated/Added';
+                } else {
+                    unset($currentCache[$key]);
+                    $logAction = 'Removed';
+                }
+                $success = $this->cacheRepository->put($cacheKey, $currentCache, $ttl);
+                if ($success) {
+                    $this->logger->info('UCM Cache Refresh: Incremental cache refresh successful.', ['key' => $key, 'action' => $logAction]);
+                } else {
+                    $this->logger->warning('UCM Cache Refresh: Failed to put updated data during incremental refresh.', ['key' => $key]);
+                }
+            } catch (Throwable $e) {
+                 $this->logger->error('UCM Cache Refresh: Error during incremental cache refresh.', [
+                     'key' => $key, 'exception' => $e::class, 'message' => $e->getMessage(),
+                 ]);
+            }
+            return;
+        }
+
+        $this->logger->info('UCM Cache Refresh: Attempting full cache refresh. Acquiring lock.', ['lock_key' => $lockKey]);
+        $lock = $this->cacheRepository->lock($lockKey, $lockTimeout);
         try {
             if ($lock->get()) {
-                if ($key) {
-                    $config = $this->configDao->getConfigByKey($key);
-                    $cachedConfig = Cache::get(self::CACHE_KEY, []);
-                    if ($config) {
-                        $cachedConfig[$key] = [
-                            'value' => $config->value,
-                            'category' => $config->category,
-                        ];
-                    } else {
-                        unset($cachedConfig[$key]);
-                    }
-                    Cache::forever(self::CACHE_KEY, $cachedConfig);
-                    UltraLog::info('UCM Action', "Incremental cache refresh for key: {$key}");
+                $this->logger->info('UCM Cache Refresh: Lock acquired. Performing full refresh.');
+                $dbConfig = $this->loadFromDatabase();
+                $freshConfig = $this->mergeWithEnvironment($dbConfig);
+                $this->config = $freshConfig;
+                $success = $this->cacheRepository->put($cacheKey, $this->config, $ttl);
+                if ($success) {
+                    $this->logger->info('UCM Cache Refresh: Full cache refresh successful. Cache updated.', ['key' => $cacheKey, 'count' => count($this->config), 'ttl' => $ttl]);
                 } else {
-                    $this->config = $this->loadFromDatabase();
-                    Cache::forever(self::CACHE_KEY, $this->config);
-                    UltraLog::info('UCM Action', 'Full configuration cache refreshed successfully');
+                    $this->logger->warning('UCM Cache Refresh: Failed to put data during full cache refresh.', ['key' => $cacheKey]);
                 }
             } else {
-                UltraLog::warning('UCM Action', 'Failed to acquire lock for cache refresh');
+                $this->logger->warning('UCM Cache Refresh: Failed to acquire lock for full cache refresh. Skipping.', ['lock_key' => $lockKey]);
             }
-        } catch (\Exception $e) {
-            UltraLog::error('UCM Action', "Error refreshing cache: {$e->getMessage()}");
-            throw $e;
+        } catch (Throwable $e) {
+            $this->logger->error('UCM Cache Refresh: Error during full cache refresh.', [
+                'exception' => $e::class, 'message' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException("Full cache refresh failed.", 0, $e);
         } finally {
-            $lock->release();
+            $lock?->release();
         }
     }
 
-    /**
-     * 🔄 Reload configuration bypassing cache
-     *
-     * Forces a direct reload of all configurations from their primary
-     * sources: database and environment. Useful in tests or emergency
-     * scenarios when cache must be ignored.
-     *
-     * 🧪 Test-safe: avoids facades or Eloquent directly
-     * 🧱 Uses same logic path as `loadConfig()` without caching
-     * 🧷 Allows recovery from invalid state
-     *
-     * @return void
-     */
-    public function reload(): void
+    public function reload(bool $invalidateCache = true): void
     {
-        $this->config = $this->loadFromDatabase();
-        $this->loadFromEnv();
+        $this->logger->info('UCM Reload: Reloading configuration from primary sources, bypassing cache.', ['invalidateCache' => $invalidateCache]);
+        $dbConfig = $this->loadFromDatabase();
+        $mergedConfig = $this->mergeWithEnvironment($dbConfig);
+        $this->config = $mergedConfig;
+        $this->logger->info('UCM Reload: In-memory configuration reloaded.', ['count' => count($this->config)]);
+
+        if ($invalidateCache && $this->isCacheEnabled()) {
+            $cacheKey = self::CACHE_KEY;
+            try {
+                $success = $this->cacheRepository->forget($cacheKey);
+                if ($success) {
+                    $this->logger->info('UCM Reload: External cache invalidated.', ['key' => $cacheKey]);
+                } else {
+                    $this->logger->warning('UCM Reload: Failed to invalidate external cache.', ['key' => $cacheKey]);
+                }
+            } catch (Throwable $e) {
+                 $this->logger->error('UCM Reload: Error invalidating external cache.', [
+                     'key' => $cacheKey, 'exception' => $e::class, 'message' => $e->getMessage(),
+                 ]);
+            }
+        }
     }
 
-
-    /**
-     * Validate that the given constant is defined in GlobalConstants.
-     *
-     * @param  string  $name
-     * @throws \InvalidArgumentException if the constant is not defined
-     * @return void
-     */
     public function validateConstant(string $name): void
     {
-        if (!defined(GlobalConstants::class . '::' . $name)) {
-            UltraLog::warning('UCM Validation', "Invalid constant: {$name}");
-            throw new \InvalidArgumentException("Invalid constant: {$name}");
+        $this->logger->debug('UCM Validation: Validating constant.', ['name' => $name]);
+        try {
+            $this->globalConstants::validateConstant($name);
+            $this->logger->info('UCM Validation: Constant validation successful.', ['name' => $name]);
+        } catch (\InvalidArgumentException $e) {
+            $this->logger->error('UCM Validation: Constant validation failed.', ['name' => $name, 'error' => $e->getMessage()]);
+            throw $e;
         }
     }
 
-}
+    // ========================================================================
+    // == NUOVI METODI PER UI / DTO ==
+    // ========================================================================
+
+    /**
+     * @param array<string, mixed> $filters
+     * @param ?int $perPage
+     * @param int $valueMaxLength
+     * @return LengthAwarePaginator|IlluminateCollection<int, ConfigDisplayData>
+     * @throws PersistenceException
+     */
+    public function getAllEntriesForDisplay(
+        array $filters = [],
+        ?int $perPage = 15,
+        int $valueMaxLength = 50
+    ): LengthAwarePaginator|IlluminateCollection {
+        $this->logger->info('UCM Manager: Retrieving entries for display.', ['filters' => $filters, 'perPage' => $perPage]);
+        try {
+            $allConfigs = $this->configDao->getAllConfigs();
+            // TODO: Apply filters on collection
+            $displayData = $allConfigs->map(
+                fn ($model) => ConfigDisplayData::fromModel($model, $valueMaxLength)
+            )->values();
+
+            if ($perPage !== null && $perPage > 0) {
+                $currentPage = Paginator::resolveCurrentPage('page');
+                $pagedData = $displayData->slice(($currentPage - 1) * $perPage, $perPage);
+                $paginator = new LengthAwarePaginator(
+                    $pagedData, $displayData->count(), $perPage, $currentPage,
+                    ['path' => Paginator::resolveCurrentPath()]
+                );
+                $this->logger->info('UCM Manager: Returning paginated display entries.', ['page' => $currentPage, 'perPage' => $perPage, 'total' => $displayData->count()]);
+                return $paginator;
+            } else {
+                $this->logger->info('UCM Manager: Returning all display entries as collection.', ['count' => $displayData->count()]);
+                return $displayData;
+            }
+        } catch (PersistenceException $e) {
+            $this->logger->error('UCM Manager: Failed to get entries for display.', ['error' => $e->getMessage()]);
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logger->error('UCM Manager: Unexpected error getting entries for display.', ['error' => $e->getMessage()]);
+            throw new PersistenceException("Unexpected error retrieving configurations for display.", 0, $e);
+        }
+    }
+
+    /**
+     * @param int $id
+     * @return ConfigEditData
+     * @throws ConfigNotFoundException
+     * @throws PersistenceException
+     */
+    public function findEntryForEdit(int $id): ConfigEditData
+    {
+        $this->logger->info('UCM Manager: Retrieving entry data for edit.', ['id' => $id]);
+        try {
+            $config = $this->configDao->getConfigById($id, false);
+            if (!$config) throw new ConfigNotFoundException("Configuration with ID '{$id}' not found for editing.");
+            $audits = $this->configDao->getAuditsByConfigId($id);
+            $versions = $this->configDao->getVersionsByConfigId($id);
+            $dto = new ConfigEditData($config, $audits, $versions);
+            $this->logger->info('UCM Manager: Successfully retrieved data for edit.', ['id' => $id, 'audit_count' => $audits->count(), 'version_count' => $versions->count()]);
+            return $dto;
+        } catch (ConfigNotFoundException $e) {
+             $this->logger->warning('UCM Manager: Config not found for edit.', ['id' => $id]);
+             throw $e;
+        } catch (PersistenceException $e) {
+             $this->logger->error('UCM Manager: Failed to get related history for edit.', ['id' => $id, 'error' => $e->getMessage()]);
+             throw $e;
+        } catch (Throwable $e) {
+             $this->logger->error('UCM Manager: Unexpected error getting entry for edit.', ['id' => $id, 'error' => $e->getMessage()]);
+             throw new PersistenceException("Unexpected error retrieving configuration data for edit [ID: {$id}].", 0, $e);
+        }
+    }
+
+    /**
+     * @param int $id
+     * @return ConfigAuditData
+     * @throws ConfigNotFoundException
+     * @throws PersistenceException
+     */
+    public function findEntryForAudit(int $id): ConfigAuditData
+    {
+        $this->logger->info('UCM Manager: Retrieving entry data for audit view.', ['id' => $id]);
+        try {
+            $config = $this->configDao->getConfigById($id, true);
+            if (!$config) throw new ConfigNotFoundException("Configuration with ID '{$id}' not found (including trashed) for audit view.");
+            $audits = $this->configDao->getAuditsByConfigId($id);
+            $dto = new ConfigAuditData($config, $audits);
+            $this->logger->info('UCM Manager: Successfully retrieved data for audit view.', ['id' => $id, 'audit_count' => $audits->count()]);
+            return $dto;
+        } catch (ConfigNotFoundException $e) {
+             $this->logger->warning('UCM Manager: Config not found for audit view.', ['id' => $id]);
+             throw $e;
+        } catch (PersistenceException $e) {
+             $this->logger->error('UCM Manager: Failed to get audit history for audit view.', ['id' => $id, 'error' => $e->getMessage()]);
+             throw $e;
+        } catch (Throwable $e) {
+             $this->logger->error('UCM Manager: Unexpected error getting entry for audit view.', ['id' => $id, 'error' => $e->getMessage()]);
+             throw new PersistenceException("Unexpected error retrieving configuration data for audit view [ID: {$id}].", 0, $e);
+        }
+    }
+
+} // End Class UltraConfigManager

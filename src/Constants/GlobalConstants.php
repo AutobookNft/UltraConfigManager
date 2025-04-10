@@ -1,86 +1,137 @@
 <?php
 
+/**
+ * 📜 Oracode Constants: GlobalConstants
+ *
+ * @package         Ultra\UltraConfigManager\Constants
+ * @version         1.1.0 // Versione incrementata per refactoring Oracode
+ * @author          Fabio Cherici
+ * @copyright       2024 Fabio Cherici
+ * @license         MIT
+ */
+
 namespace Ultra\UltraConfigManager\Constants;
 
-use Ultra\UltraLogManager\Facades\UltraLog;
+use InvalidArgumentException; // PHP Standard Exception
+use ReflectionClass; // Per introspection delle costanti
 
 /**
- * GlobalConstants
+ * 🎯 Purpose: Defines globally accessible constant values used throughout the
+ *    UltraConfigManager package. Provides a centralized, single source of truth for
+ *    magic numbers or strings, improving maintainability and readability. Includes
+ *    helper methods for safe retrieval and validation of defined constants.
  *
- * Defines global constants for the UltraConfigManager system and provides
- * safe accessor methods to retrieve or validate constant values.
+ * 🧱 Structure: Contains public constants (`NO_USER`, `DEFAULT_CATEGORY`).
+ *    Provides static methods `getConstant` and `validateConstant` using reflection.
  *
- * This class acts as a centralized definition point for shared values across
- * the UCM ecosystem and logs improper access attempts.
+ * 🧩 Context: Used by various components within UCM (e.g., `UltraConfigManager`, DAOs, Models)
+ *    to refer to standard values consistently.
+ *
+ * 🛠️ Usage: `GlobalConstants::NO_USER`, `GlobalConstants::validateConstant('NO_USER')`.
+ *
+ * 💾 State: Stateless. Holds only constant definitions.
+ *
+ * 🗝️ Key Constants:
+ *    - `NO_USER`: Represents the ID for an unknown or system user (typically 0).
+ *    - `DEFAULT_CATEGORY`: Fallback category identifier (e.g., 'general', could align with CategoryEnum::None).
+ *      ORCD: Nota Padmin: Valutare se DEFAULT_CATEGORY è ancora necessario o se usare CategoryEnum::None.value direttamente. Per ora mantenuto come nell'originale.
+ *
+ * 🚦 Signals:
+ *    - `getConstant`: Returns constant value or default.
+ *    - `validateConstant`: Returns void on success, throws `InvalidArgumentException` on failure.
+ *
+ * 🛡️ Privacy (GDPR): Constants themselves are typically non-sensitive identifiers.
+ *    - `@privacy-safe`: Constants defined here are not considered PII.
+ *
+ * 🤝 Dependencies: None beyond standard PHP Reflection API.
+ *
+ * 🧪 Testing:
+ *    - Unit test `getConstant` for defined and undefined constants, checking return values.
+ *    - Unit test `validateConstant` ensuring it throws `InvalidArgumentException` for invalid names and does nothing for valid names.
+ *
+ * 💡 Logic: Uses PHP's Reflection API to dynamically access constants, making the helper
+ *    methods automatically aware of any new constants added to the class without needing updates.
+ *
+ * @package Ultra\UltraConfigManager\Constants
  */
-class GlobalConstants
+final class GlobalConstants // Class marked as final as it only contains constants and static methods
 {
     /**
-     * Represents an unknown or anonymous user ID.
-     *
-     * Used in audit logs and version tracking when no authenticated user is available.
-     *
+     * 👤 Identifier for an unknown, anonymous, or system user.
+     * Used in audit/version logs when a specific user context is unavailable.
      * @var int
      */
     public const NO_USER = 0;
 
     /**
-     * Default configuration category when none is provided.
-     *
-     * Helps avoid hardcoded strings in multiple places.
-     *
+     * 🏷️ Default configuration category identifier (if needed as fallback).
+     * Consider using `CategoryEnum::None->value` instead if applicable.
      * @var string
      */
-    public const DEFAULT_CATEGORY = 'general';
+    public const DEFAULT_CATEGORY = 'general'; // Original value kept
 
     /**
-     * Retrieve the value of a constant by name.
-     *
-     * This method checks if the given constant exists in the class and returns its value.
-     * If it does not exist, it logs a warning (unless suppressed) and returns a default fallback value.
-     *
-     * @param string $name     The name of the constant to retrieve
-     * @param mixed  $default  The fallback value if the constant is not defined
-     * @param bool   $silent   If true, suppress logging when constant is not found
-     * @return mixed           The constant value or the fallback default
+     * 🚫 Private constructor to prevent instantiation of this utility class.
      */
-    public static function getConstant(string $name, mixed $default = null, bool $silent = false): mixed
+    private function __construct()
     {
-        $reflection = new \ReflectionClass(self::class);
-        $constants = $reflection->getConstants();
-
-        if (array_key_exists($name, $constants)) {
-            return $constants[$name];
-        }
-
-        if (!$silent) {
-            UltraLog::warning('UCM Action', "Attempted to access undefined constant: {$name}");
-        }
-
-        return $default;
+        // Cannot be instantiated.
     }
 
     /**
-     * Validate if a constant exists and throw an exception if not.
+     * 📡 Safely retrieves the value of a defined constant by its name.
+     * Uses reflection to access constants dynamically.
      *
-     * This method ensures that only defined constants are used and logs
-     * any invalid attempts. In case of failure, the exception message
-     * includes a suggestion list of valid constants.
+     * @param string $name The case-sensitive name of the constant (e.g., 'NO_USER').
+     * @param mixed $default The value to return if the constant is not defined. Defaults to null.
      *
-     * @param string $name  The name of the constant to validate
-     * @throws \InvalidArgumentException if the constant is not defined
+     * @return mixed The value of the constant if found, otherwise the `$default` value.
+     * @static
+     * @readOperation Reads class constants.
+     */
+    public static function getConstant(string $name, mixed $default = null): mixed
+    {
+        try {
+            $reflection = new ReflectionClass(self::class);
+            // getConstants(ReflectionClassConstant::IS_PUBLIC) ensures only public constants
+            $constants = $reflection->getConstants(\ReflectionClassConstant::IS_PUBLIC);
+
+            return $constants[$name] ?? $default; // Return constant value or default
+
+        } catch (\ReflectionException $e) {
+             // Should not happen if self::class is valid
+             error_log("Error reflecting GlobalConstants: " . $e->getMessage());
+             return $default; // Fallback if reflection fails
+        }
+    }
+
+    /**
+     * ✅ Validates if a constant with the given name is defined in this class.
+     * Throws an exception if the constant is not found. Uses reflection.
+     *
+     * @param string $name The case-sensitive name of the constant to validate.
      * @return void
+     *
+     * @throws InvalidArgumentException If the constant `$name` is not defined in `GlobalConstants`.
+     * @static
+     * @validation Checks constant existence.
      */
     public static function validateConstant(string $name): void
     {
-        $reflection = new \ReflectionClass(self::class);
-        $constants = $reflection->getConstants();
+        try {
+            $reflection = new ReflectionClass(self::class);
+            $constants = $reflection->getConstants(\ReflectionClassConstant::IS_PUBLIC);
 
-        if (!array_key_exists($name, $constants)) {
-            UltraLog::error('UCM Action', "Invalid constant accessed: {$name}");
-
-            $valid = implode(', ', array_keys($constants));
-            throw new \InvalidArgumentException("Constant {$name} does not exist in GlobalConstants. Valid options are: [{$valid}]");
+            if (!array_key_exists($name, $constants)) {
+                $valid = implode(', ', array_keys($constants));
+                throw new InvalidArgumentException(
+                    "Constant '{$name}' does not exist in GlobalConstants. Valid public constants are: [{$valid}]"
+                );
+            }
+            // Constant exists, validation passes.
+        } catch (\ReflectionException $e) {
+             // Wrap reflection error in a standard exception
+             throw new \RuntimeException("Error validating constants via reflection: " . $e->getMessage(), 0, $e);
         }
     }
 }

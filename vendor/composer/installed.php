@@ -3,7 +3,7 @@
         'name' => 'ultra/ultra-config-manager',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'a1fafeedd61d3a6d7e819ff80a3b06a055e13ce7',
+        'reference' => 'bc2e43718b3e44c0d64db921f7bcf82721a6db4f',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -996,9 +996,9 @@
             'dev_requirement' => true,
         ),
         'spatie/laravel-permission' => array(
-            'pretty_version' => '6.16.0',
-            'version' => '6.16.0.0',
-            'reference' => '4fa03c06509e037a4d42c131d0f181e3e4bbd483',
+            'pretty_version' => '6.17.0',
+            'version' => '6.17.0.0',
+            'reference' => '02ada8f638b643713fa2fb543384738e27346ddb',
             'type' => 'library',
             'install_path' => __DIR__ . '/../spatie/laravel-permission',
             'aliases' => array(),
@@ -1322,7 +1322,7 @@
         'ultra/ultra-config-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'a1fafeedd61d3a6d7e819ff80a3b06a055e13ce7',
+            'reference' => 'bc2e43718b3e44c0d64db921f7bcf82721a6db4f',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1331,7 +1331,7 @@
         'ultra/ultra-error-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '19d4946b77fb622929a194583f970947e89aa43f',
+            'reference' => 'fff2da1f93055fc7bc0be13ec162cb012e387797',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-error-manager',
             'aliases' => array(
@@ -1342,7 +1342,7 @@
         'ultra/ultra-log-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49',
+            'reference' => '745c1c616257e13bd544ad108e93c4b76f9fe2c0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-log-manager',
             'aliases' => array(
@@ -1353,7 +1353,7 @@
         'ultra/ultra-translation-manager' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '7270840ac48583a70c42a20b03d32e97d3a38cc0',
+            'reference' => 'cf613890c14d7da4593c8bd5200fd96e5d563813',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ultra/ultra-translation-manager',
             'aliases' => array(

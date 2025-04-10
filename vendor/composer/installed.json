@@ -5864,17 +5864,17 @@
         },
         {
             "name": "spatie/laravel-permission",
-            "version": "6.16.0",
-            "version_normalized": "6.16.0.0",
+            "version": "6.17.0",
+            "version_normalized": "6.17.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-permission.git",
-                "reference": "4fa03c06509e037a4d42c131d0f181e3e4bbd483"
+                "reference": "02ada8f638b643713fa2fb543384738e27346ddb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/4fa03c06509e037a4d42c131d0f181e3e4bbd483",
-                "reference": "4fa03c06509e037a4d42c131d0f181e3e4bbd483",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/02ada8f638b643713fa2fb543384738e27346ddb",
+                "reference": "02ada8f638b643713fa2fb543384738e27346ddb",
                 "shasum": ""
             },
             "require": {
@@ -5890,7 +5890,7 @@
                 "orchestra/testbench": "^6.23|^7.0|^8.0|^9.0|^10.0",
                 "phpunit/phpunit": "^9.4|^10.1|^11.5"
             },
-            "time": "2025-02-28T20:29:57+00:00",
+            "time": "2025-04-08T15:06:14+00:00",
             "type": "library",
             "extra": {
                 "laravel": {
@@ -5938,7 +5938,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-permission/issues",
-                "source": "https://github.com/spatie/laravel-permission/tree/6.16.0"
+                "source": "https://github.com/spatie/laravel-permission/tree/6.17.0"
             },
             "funding": [
                 {
@@ -8587,21 +8587,22 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraErrorManager.git",
-                "reference": "19d4946b77fb622929a194583f970947e89aa43f"
+                "reference": "fff2da1f93055fc7bc0be13ec162cb012e387797"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/19d4946b77fb622929a194583f970947e89aa43f",
-                "reference": "19d4946b77fb622929a194583f970947e89aa43f",
+                "url": "https://api.github.com/repos/AutobookNft/UltraErrorManager/zipball/fff2da1f93055fc7bc0be13ec162cb012e387797",
+                "reference": "fff2da1f93055fc7bc0be13ec162cb012e387797",
                 "shasum": ""
             },
             "require": {
                 "illuminate/http": "^11.0",
-                "illuminate/log": "^11.0",
                 "illuminate/mail": "^11.0",
                 "illuminate/support": "^11.0",
+                "illuminate/translation": "^11.0",
                 "illuminate/view": "^11.0",
                 "php": "^8.1|^8.2|^8.3",
+                "psr/log": "^3.0",
                 "ultra/ultra-log-manager": "dev-main",
                 "ultra/ultra-translation-manager": "dev-main"
             },
@@ -8609,20 +8610,18 @@
                 "fakerphp/faker": "^1.23",
                 "mockery/mockery": "^1.6",
                 "orchestra/testbench": "^9.0",
-                "phpunit/phpunit": "^11.5.3"
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^11.5.3",
+                "squizlabs/php_codesniffer": "^3.7"
             },
-            "time": "2025-04-08T20:59:51+00:00",
+            "time": "2025-04-10T14:42:10+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
                     "providers": [
                         "Ultra\\ErrorManager\\Providers\\UltraErrorManagerServiceProvider"
-                    ],
-                    "aliases": {
-                        "UltraError": "Ultra\\ErrorManager\\Facades\\UltraError",
-                        "TestingConditions": "Ultra\\ErrorManager\\Facades\\TestingConditions"
-                    }
+                    ]
                 }
             },
             "installation-source": "dist",
@@ -8639,6 +8638,17 @@
                     "Ultra\\ErrorManager\\Tests\\": "tests/"
                 }
             },
+            "scripts": {
+                "test": [
+                    "vendor/bin/phpunit"
+                ],
+                "analyse": [
+                    "vendor/bin/phpstan analyse"
+                ],
+                "format": [
+                    "vendor/bin/phpcs --standard=PSR12 src tests"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -8648,7 +8658,7 @@
                     "email": "fabiocherici@gmail.com"
                 }
             ],
-            "description": "Advanced error management library for the Ultra ecosystem",
+            "description": "Advanced, injectable error management library for the Ultra ecosystem",
             "support": {
                 "source": "https://github.com/AutobookNft/UltraErrorManager/tree/main",
                 "issues": "https://github.com/AutobookNft/UltraErrorManager/issues"
@@ -8662,12 +8672,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraLogManager.git",
-                "reference": "8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49"
+                "reference": "745c1c616257e13bd544ad108e93c4b76f9fe2c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49",
-                "reference": "8b80dc3da76fcfd7bb3730eeb7cd2d8db6a11a49",
+                "url": "https://api.github.com/repos/AutobookNft/UltraLogManager/zipball/745c1c616257e13bd544ad108e93c4b76f9fe2c0",
+                "reference": "745c1c616257e13bd544ad108e93c4b76f9fe2c0",
                 "shasum": ""
             },
             "require": {
@@ -8678,7 +8688,7 @@
                 "monolog/monolog": "^3.0",
                 "php": "^8.1|^8.2|^8.3"
             },
-            "time": "2025-04-08T19:45:50+00:00",
+            "time": "2025-04-09T15:56:12+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
@@ -8720,23 +8730,23 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/AutobookNft/UltraTranslationManager.git",
-                "reference": "7270840ac48583a70c42a20b03d32e97d3a38cc0"
+                "reference": "cf613890c14d7da4593c8bd5200fd96e5d563813"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AutobookNft/UltraTranslationManager/zipball/7270840ac48583a70c42a20b03d32e97d3a38cc0",
-                "reference": "7270840ac48583a70c42a20b03d32e97d3a38cc0",
+                "url": "https://api.github.com/repos/AutobookNft/UltraTranslationManager/zipball/cf613890c14d7da4593c8bd5200fd96e5d563813",
+                "reference": "cf613890c14d7da4593c8bd5200fd96e5d563813",
                 "shasum": ""
             },
             "require": {
                 "illuminate/cache": "^11.0",
+                "illuminate/filesystem": "^11.0",
                 "illuminate/support": "^11.0",
                 "illuminate/translation": "^11.0",
                 "laravel/framework": "^11.0",
-                "php": "^8.1|^8.2|^8.3",
-                "ultra/ultra-log-manager": "dev-main"
+                "php": "^8.1|^8.2|^8.3"
             },
-            "time": "2025-04-05T15:28:45+00:00",
+            "time": "2025-04-09T20:19:55+00:00",
             "default-branch": true,
             "type": "library",
             "extra": {
