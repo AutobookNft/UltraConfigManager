@@ -1,147 +1,199 @@
-
-# UltraConfigManager
+# UltraConfigManager (UCM)
 
 ## 📖 What is it?
 
-**UltraConfigManager (UCM)** is a versioned, auditable and secure configuration system for Laravel.  
-It treats configuration not as passive .env or static files — but as **live, vital data** that must be validated, tracked and protected.
+**UltraConfigManager (UCM)** is a **versioned, auditable, secure, and Oracode-compliant** configuration management system designed for Laravel applications. It elevates configuration from static files or simple key-value stores to **live, critical data** that demands validation, robust tracking, security, and clear semantic intent.
 
-Designed for high-responsibility systems where a misconfigured setting might have real-world consequences.
+Built for high-responsibility systems where configuration errors can have significant consequences, UCM provides developers with confidence and traceability.
+
+[![Latest Version](https://img.shields.io/packagist/v/ultra/ultra-config-manager.svg?style=flat-square)](https://packagist.org/packages/ultra/ultra-config-manager)
+[![Total Downloads](https://img.shields.io/packagist/dt/ultra/ultra-config-manager.svg?style=flat-square)](https://packagist.org/packages/ultra/ultra-config-manager)
+[![License](https://img.shields.io/packagist/l/ultra/ultra-config-manager.svg?style=flat-square)](https://packagist.org/packages/ultra/ultra-config-manager)
+
+---
+
+## ✨ Core Principles (Oracode Aligned)
+
+-   **Intentional & Interrogable:** Configuration changes are tracked with clear purpose (audit logs, versions). The system's state is queryable.
+-   **Secure:** Sensitive values are automatically encrypted at rest (`EncryptedCast`). Access is controlled via middleware.
+-   **Versioned & Auditable:** Every change creates a new version and an audit record, linked to the user responsible, allowing full traceability and potential rollbacks.
+-   **Robust & Testable:** Designed with Dependency Injection, free from internal Facade coupling, promoting high testability and reliability. Errors are handled via specific exceptions.
+-   **Semantically Coherent:** Uses Enums (`CategoryEnum`) and constants (`GlobalConstants`) for clarity and consistency.
 
 ---
 
 ## 🎯 Objectives
 
-- Protect critical configuration data from silent overrides
-- Provide versioning, rollback and full audit trail
-- Allow flexible role/permission control (Spatie or fallback)
-- Avoid hardcoded values — categories, defaults, roles are centralized
-- Improve developer awareness and traceability
+-   **Protect** critical configuration data with encryption and access control.
+-   **Track** every change with comprehensive versioning and user-linked audit trails.
+-   **Validate** configuration data (keys, types, categories).
+-   **Centralize** configuration management through a consistent API and optional UI.
+-   **Enable** flexible authorization using Spatie/laravel-permission or a simple role fallback.
+-   **Improve** developer awareness, system observability, and long-term maintainability.
 
 ---
 
 ## 🧠 Architecture
 
-- `UltraConfigManager`: the service logic
-- `ConfigDaoInterface`: contract for persistence
-- `EloquentConfigDao`: implementation based on Eloquent ORM
-- `UltraConfigController`: UI + CRUD + audit integration
-- `CategoryEnum`: classification and translation
-- `GlobalConstants`: central point for shared values
-- `CheckConfigManagerRole`: middleware (Spatie-aware or fallback)
+UCM follows a clean, layered architecture promoting separation of concerns:
+
+-   **`UltraConfigManager` (Service):** The central orchestrator, providing the public API. Manages in-memory state, caching, and coordinates interactions.
+-   **`ConfigDaoInterface` (Contract):** Defines the contract for data persistence.
+-   **`EloquentConfigDao` (Implementation):** The default DAO implementation using Eloquent ORM. Handles atomic database operations (config + version + audit) via transactions.
+-   **Models:**
+    -   `UltraConfigModel`: Represents the main configuration entry (`uconfig` table), includes `EncryptedCast` and `SoftDeletes`.
+    -   `UltraConfigVersion`: Represents a historical version (`uconfig_versions` table).
+    -   `UltraConfigAudit`: Records a change event (`uconfig_audit` table), linking to `User`.
+-   **Services:**
+    -   `VersionManager`: Calculates sequential version numbers.
+-   **Casts:**
+    -   `EncryptedCast`: Automatically encrypts/decrypts sensitive values.
+-   **Enums & Constants:**
+    -   `CategoryEnum`: Defines valid configuration categories.
+    -   `GlobalConstants`: Provides shared constant values (e.g., `NO_USER`).
+-   **HTTP Layer:**
+    -   `UltraConfigController`: Handles web requests for the optional UI. Interacts *only* with `UltraConfigManager`.
+    -   `CheckConfigManagerRole` (Middleware): Authorizes access based on permissions/roles.
+-   **Console:**
+    -   `UConfigInitializeCommand`: Post-installation setup command.
+-   **Exceptions:** Custom exceptions (`PersistenceException`, `ConfigNotFoundException`, `DuplicateKeyException`) for semantic error handling.
+-   **DTOs:** Data Transfer Objects (`ConfigDisplayData`, `ConfigEditData`, `ConfigAuditData`) for structured data exchange between layers (e.g., Manager to Controller).
+-   **Facade:**
+    -   `UConfig`: Optional static proxy for convenient access to the `UltraConfigManager` service.
 
 ---
 
 ## ⚙️ How It Works
 
-1. Configs are created via controller or facade (`UConfig::set(...)`)
-2. Each update triggers:
-   - a new version saved (`UltraConfigVersion`)
-   - an audit log (`UltraConfigAudit`)
-3. You can retrieve by key or ID
-4. Enum-based category validation and translation
+1.  **Access:** Interact with configuration via the `UConfig` Facade or by injecting the `UltraConfigManager` service.
+2.  **Retrieval (`get`, `has`, `all`):** Primarily reads from an in-memory cache for performance. Falls back to database (via DAO) and environment variables if cache is missed or disabled.
+3.  **Mutation (`set`, `delete`):**
+    -   Operations are delegated to the `UltraConfigManager`.
+    -   The Manager calls the `ConfigDaoInterface` (`saveConfig` or `deleteConfigByKey`).
+    -   The DAO performs the database operation (create/update/soft-delete) **atomically** within a transaction.
+    -   If requested, the DAO also creates `UltraConfigVersion` and `UltraConfigAudit` records within the same transaction.
+    -   On successful persistence, the Manager updates its in-memory state and refreshes the external cache.
+4.  **Encryption:** The `EncryptedCast` automatically encrypts values before they are saved by the DAO/Model and decrypts them upon retrieval.
+5.  **Error Handling:** Failures in persistence or other operations result in specific exceptions (`PersistenceException`, etc.) being thrown, allowing for robust error handling by the caller (e.g., the Controller using `UltraErrorManager`).
 
 ---
 
 ## 🔐 Permissions
 
-- If `config('uconfig.use_spatie_permissions') === true`, it uses `hasPermissionTo()`
-- Else, it checks a fallback `role` field on user
-- Middleware: `uconfig.check_role:view-config` or `create-config`, etc.
+UCM provides flexible authorization:
+
+-   **Spatie Integration:** If `config('uconfig.use_spatie_permissions')` is `true` (and `spatie/laravel-permission` is installed), the `CheckConfigManagerRole` middleware uses `$user->hasPermissionTo('permission-name')`. Required permissions are typically:
+    -   `view-config`
+    -   `create-config`
+    -   `update-config`
+    -   `delete-config`
+-   **Fallback Role:** If `use_spatie_permissions` is `false`, the middleware checks for a specific role property/attribute on the authenticated user (default assumes `$user->role`). The mapping is:
+    -   `view-config`: Requires 'ConfigViewer' (or Editor/Manager)
+    -   `create-config`, `update-config`: Requires 'ConfigEditor' (or Manager)
+    -   `delete-config`: Requires 'ConfigManager'
+-   **Middleware Alias:** `uconfig.check_role` (applied in `routes/uconfig.php`).
 
 ---
 
 ## 🚀 Installation
 
-```bash
-composer require ultra/ultra-config-manager
-php artisan vendor:publish --tag=uconfig-resources
-```
+**Requirements:**
 
-If aliases are not auto-discovered, add to `config/app.php`:
+-   **PHP:** `^8.2` (Due to usage of modern PHP features like `readonly class`)
+-   **Laravel:** `^11.0` (Based on dependencies, verify compatibility if needed for other versions)
+-   **Database:** A configured Laravel database connection.
 
-```php
-'UConfig' => UltraProject\UConfig\Facades\UConfig::class,
-```
+**Steps:**
+
+1.  **Install via Composer:**
+    ```bash
+    composer require ultra/ultra-config-manager
+    ```
+
+2.  **Publish Resources:** This publishes migrations, config file, views, translations, and routes.
+    ```bash
+    php artisan vendor:publish --tag=uconfig-resources
+    ```
+
+3.  **Run Migrations:** Create the necessary database tables.
+    ```bash
+    php artisan migrate
+    ```
+
+4.  **Configure (Optional):** Edit the published `config/uconfig.php` file to adjust settings like Spatie integration, cache, or table names if necessary.
+
+5.  **Add Facade Alias (Optional):** If Facade auto-discovery fails or you prefer explicit aliases, add the following to the `aliases` array in your `config/app.php`:
+    ```php
+    'UConfig' => \Ultra\UltraConfigManager\Facades\UConfig::class,
+    ```
+
+6.  **Initialize (Optional):** Run the initialization command. It checks table existence and displays guidance.
+    ```bash
+    php artisan uconfig:initialize
+    ```
 
 ---
 
-## ⚙️ Configuration File (`config/uconfig.php`)
+## ⚙️ Configuration (`config/uconfig.php`)
 
-- `use_spatie_permissions`: whether to use Spatie's permission system
+The main configuration file allows you to customize UCM's behavior:
+
+-   `database.table` (default: `'uconfig'`): Name of the main configuration table.
+-   `cache.enabled` (default: `true`): Enable/disable configuration caching.
+-   `cache.ttl` (default: `3600`): Cache Time-To-Live in seconds.
+-   `use_spatie_permissions` (default: `true`): Set to `true` to use `spatie/laravel-permission` for authorization, `false` for the simple role fallback.
+
+*(Note: Ensure this section accurately reflects all keys present in the published `uconfig.php` file.)*
 
 ---
 
 ## 📦 Resource Publishing
 
-When you run:
+Running `php artisan vendor:publish --tag=uconfig-resources` publishes:
 
-```bash
-php artisan vendor:publish --tag=uconfig-resources
-```
-
-You publish:
-
-- Migrations:
-  - `create_uconfig_table`
-  - `create_uconfig_versions_table`
-  - `create_uconfig_audit_table`
-- Views to `resources/views/vendor/uconfig`
-- Translations
-- `uconfig.php` config file
-- Optional: `aliases.php` to bootstrap folder
-
-## 🔁 Route Autoloading in Laravel 11+
-
-In Laravel 11, custom route files like `routes/uconfig.php` are **not loaded automatically** unless explicitly declared in `bootstrap/app.php`.
-
-**UltraConfigManager handles this internally**.  
-Once the file is published, it is automatically loaded thanks to the following logic inside the service provider:
-
-```php
-$this->app->booted(function () {
-    $router = $this->app->make(\Illuminate\Routing\Router::class);
-    if (file_exists(base_path('routes/uconfig.php'))) {
-        $router->group([], base_path('routes/uconfig.php'));
-    }
-});
-```
-
-✅ No need to manually touch `bootstrap/app.php`  
-✅ The file is optional and safely ignored if not present  
-✅ Can be edited after publishing to customize route behavior
+-   **Migrations:** Creates `uconfig`, `uconfig_versions`, `uconfig_audit` tables. File names include timestamps for ordering.
+-   **Configuration:** `config/uconfig.php`.
+-   **Views:** To `resources/views/vendor/uconfig/` for UI customization.
+-   **Translations:** To `resources/lang/vendor/uconfig/` for localization.
+-   **Routes:** `routes/uconfig.php` defining the web UI endpoints.
+-   **Seeder (Stub):** `database/seeders/PermissionSeeder.php` (stub for creating default Spatie permissions/roles). *Caution: May overwrite existing file.*
 
 ---
 
-## 🧪 Testing & Error Simulation
+## 🔁 Route Loading
 
-Simulate test conditions in development via:
+The published `routes/uconfig.php` file is loaded automatically by the `UConfigServiceProvider`, including the necessary `web` middleware group. You typically don't need to register it manually in `bootstrap/app.php`.
 
-```php
-TestingConditions::enable('UCM_NOT_FOUND');
-TestingConditions::enable('UCM_DUPLICATE_KEY');
-```
+---
 
-All DAO methods return handled responses using `UltraError::handle(...)`.
+## 🧪 Testing
+
+UCM is designed for testability:
+
+-   **Dependency Injection:** Core classes (`UltraConfigManager`, `EloquentConfigDao`, etc.) receive dependencies via constructor, allowing easy mocking in tests.
+-   **No Internal Facades:** Core logic is free from static Facade calls, simplifying unit testing.
+-   **Custom Exceptions:** Specific exceptions (`PersistenceException`, etc.) allow predictable testing of error conditions.
+-   **Testing Strategy:**
+    -   **Unit Tests:** Mock dependencies (DAO, Cache, Logger) to test Manager logic in isolation. Test DAO methods by mocking DB interactions or using an in-memory database.
+    -   **Feature Tests:** Use Laravel's HTTP testing helpers (`$this->get`, `$this->post`, etc.) to test the Controller, Middleware, and Routes. You can mock the `UltraConfigManager` at this level using `swap` or `partialMock`.
+-   **UltraErrorManager:** While not used internally by UCM core, `UltraErrorManager` can be used in your application's Exception Handler or Controllers to catch exceptions thrown by UCM and provide standardized error responses/logging.
 
 ---
 
 ## 🌍 Translation
 
-Category labels use enum cases with a fallback for `None`.
-
-```php
-CategoryEnum::translatedOptions();
-// => ['system' => 'System', ...]
-```
-
-Translations are under: `resources/lang/vendor/uconfig`.
+-   UI labels and messages are translatable via standard Laravel language files.
+-   Translations are published to `resources/lang/vendor/uconfig`.
+-   The `CategoryEnum` includes methods (`translatedName`, `translatedOptions`) to retrieve translated category labels.
 
 ---
 
 ## ⛳ Credits & Philosophy
 
-This package was born from the idea that **configuration is not metadata — it is operational infrastructure**.  
-Inspired by real-world cases where misconfigured systems led to physical failures.
+This package embodies the **Oracode** philosophy: code should not just function, but endure, communicate its intent, protect its data, and be inherently testable and robust. Inspired by the critical need for reliable configuration in high-stakes environments.
 
-Generated on: 2025-04-01
+Developed by Fabio Cherici.
+
+---
+
+*Generated/Updated: 2024-MM-DD* <!-- Update with current date -->
