@@ -415,39 +415,36 @@ class EloquentConfigDao implements ConfigDaoInterface
      * @internal Used within saveConfig transaction.
      * @param UltraConfigModel $config The parent configuration model.
      * @param int $versionNumber The version number to assign.
-     * @param int|null $userId Optional user ID (if version schema tracks user).
+     * @param int $userId The ID of the user performing the action. // MODIFICATO: userId ora non è nullable qui
      * @return UltraConfigVersion
      * @throws PersistenceException
      */
-    protected function internalCreateVersion(UltraConfigModel $config, int $versionNumber, ?int $userId = null): UltraConfigVersion
+    // Modifichiamo la firma per rendere userId obbligatorio qui, useremo GlobalConstants::NO_USER se necessario prima di chiamare
+    protected function internalCreateVersion(UltraConfigModel $config, int $versionNumber, int $userId): UltraConfigVersion
     {
-         $this->logger->debug('DAO Internal: Creating version record.', ['config_id' => $config->id, 'version' => $versionNumber]);
+        $this->logger->debug('DAO Internal: Creating version record.', ['config_id' => $config->id, 'version' => $versionNumber, 'userId' => $userId]); // Log userId
         try {
             $versionData = [
                 'uconfig_id' => $config->id,
                 'version' => $versionNumber,
                 'key' => $config->key,
-                'category' => $config->category?->value, // Use string value from enum
+                'category' => $config->category?->value,
                 'note' => $config->note,
-                'value' => $config->getRawOriginal('value') ?? $config->value // Use raw value if possible to avoid double encryption if cast ran again
-                // 'user_id' => $userId, // Add if schema supports it
+                'value' => $config->value, // Assume model accessor gives correct value to store
+                'user_id' => $userId, // <-- Aggiunto user_id
             ];
-             // Ensure 'value' is correctly handled (should be the already encrypted value from the parent model)
-             // If the model automatically encrypts on set, the value in $config->value might already be plain text
-             // It's safer to potentially fetch the raw attribute IF NECESSARY or trust the model handles it.
-             // Let's assume the model's `value` attribute holds the correct state to be versioned.
-             $versionData['value'] = $config->value;
-
 
             $version = UltraConfigVersion::create($versionData);
-             $this->logger->info('DAO Internal: Version record created.', ['version_id' => $version->id]);
+            $this->logger->info('DAO Internal: Version record created.', ['version_id' => $version->id]);
             return $version;
         } catch (QueryException $e) {
-             $this->logger->error('DAO Internal: Database error creating version record.', ['config_id' => $config->id, 'error' => $e->getMessage()]);
-             throw new PersistenceException("Error creating version record for config ID '{$config->id}'.", $e->getCode(), $e);
+            // ... gestione eccezioni ...
+            $this->logger->error('DAO Internal: Database error creating version record.', ['config_id' => $config->id, 'error' => $e->getMessage()]);
+            throw new PersistenceException("Error creating version record for config ID '{$config->id}'.", $e->getCode(), $e);
         } catch (Throwable $e) {
-             $this->logger->error('DAO Internal: Unexpected error creating version record.', ['config_id' => $config->id, 'error' => $e->getMessage()]);
-             throw new PersistenceException("Unexpected error creating version record for config ID '{$config->id}'.", 0, $e);
+            // ... gestione eccezioni ...
+            $this->logger->error('DAO Internal: Unexpected error creating version record.', ['config_id' => $config->id, 'error' => $e->getMessage()]);
+            throw new PersistenceException("Unexpected error creating version record for config ID '{$config->id}'.", 0, $e);
         }
     }
 

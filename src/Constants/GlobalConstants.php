@@ -54,7 +54,7 @@ use ReflectionClass; // Per introspection delle costanti
  *
  * @package Ultra\UltraConfigManager\Constants
  */
-final class GlobalConstants // Class marked as final as it only contains constants and static methods
+class GlobalConstants 
 {
     /**
      * 👤 Identifier for an unknown, anonymous, or system user.

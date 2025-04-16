@@ -12,6 +12,8 @@
 
 namespace Ultra\UltraConfigManager\Models;
 
+use Ultra\UltraConfigManager\Database\Factories\UltraConfigVersionFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Psr\Log\LoggerInterface; // Per Dependency Injection (opzionale)
@@ -101,6 +103,8 @@ class UltraConfigVersion extends Model
 {
     // Note: No SoftDeletes needed for versions themselves typically.
 
+    use HasFactory;
+
     /**
      * 💾 The database table used by the model.
      * @var string
@@ -119,7 +123,7 @@ class UltraConfigVersion extends Model
         'category',
         'note',
         'value',
-        // 'user_id', // Uncomment if applicable
+        'user_id', 
     ];
 
     /**
@@ -131,7 +135,7 @@ class UltraConfigVersion extends Model
         'category' => CategoryEnum::class, // Cast category string to Enum
         'version' => 'integer',           // Cast version number to integer
         'uconfig_id' => 'integer',        // Cast foreign key to integer
-        // 'user_id' => 'integer',        // Uncomment if applicable
+        'user_id' => 'integer',          // Cast user_id to integer (if applicable)
     ];
 
     /**
@@ -140,6 +144,16 @@ class UltraConfigVersion extends Model
      * @var bool
      */
     public $timestamps = true; // Default is true, can be set explicitly
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Ultra\UltraConfigManager\Database\Factories\UltraConfigVersionFactory
+     */
+    protected static function newFactory(): UltraConfigVersionFactory
+    {
+        return UltraConfigVersionFactory::new();
+    }
 
     /**
      * 🔗 Defines the relationship back to the parent configuration entry.
@@ -164,7 +178,7 @@ class UltraConfigVersion extends Model
         // Add withDefault if user_id can be null or the user might be deleted
         return $this->belongsTo(User::class, 'user_id')->withDefault([
              // Provide default attributes for a non-existent user
-            'name' => 'Unknown User',
+            'name' => 'Unknown/System',
         ]);
     }
 

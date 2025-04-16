@@ -146,6 +146,16 @@ class UltraConfigModel extends Model
     protected static string $factory = UltraConfigModelFactory::class;
 
     /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Ultra\UltraConfigManager\Database\Factories\UltraConfigModelFactory
+     */
+    protected static function newFactory(): UltraConfigModelFactory
+    {
+        return UltraConfigModelFactory::new();
+    }
+
+    /**
      * 🔗 Defines the relationship to the configuration's version history.
      * One configuration has many versions.
      *
@@ -165,6 +175,22 @@ class UltraConfigModel extends Model
     public function audits(): HasMany
     {
         return $this->hasMany(UltraConfigAudit::class, 'uconfig_id', 'id');
+    }
+
+    /**
+     * 🛡️ Mutator for the 'category' attribute.
+     * Ensures null values are stored as the backing value of CategoryEnum::None ('')
+     * for semantic consistency when retrieving the model.
+     *
+     * @param ?string $value The proposed category value (string from Enum or null).
+     * @return void
+     */
+    public function setCategoryAttribute(?string $value): void
+    {
+        // If the value is null, store the backing value of None ('').
+        // Otherwise, store the provided string value (e.g., 'system', 'application').
+        // The CategoryEnum cast will handle validation of non-null strings on retrieval/setting if needed.
+        $this->attributes['category'] = $value ?? CategoryEnum::None->value;
     }
 
     /**

@@ -1,11 +1,22 @@
 <?php
 
+/**
+ * 📜 Oracode Model: User
+ *
+ * @package         Ultra\UltraConfigManager\Models
+ * @version         1.1.0 // Version bump for boot refactoring (remove UltraLog Facade)
+ * @author          Fabio Cherici / Padmin D. Curtis (Refactoring)
+ * @copyright       2024 Fabio Cherici
+ * @license         MIT
+ */
+
 namespace Ultra\UltraConfigManager\Models;
 
-use Ultra\UltraLogManager\Facades\UltraLog;
+// Rimuovi: use Ultra\UltraLogManager\Facades\UltraLog;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use InvalidArgumentException; // Usa per validazione
 
 /**
  * User - Represents an authenticated user in the UltraConfigManager system.
@@ -13,6 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
  * This model defines users who interact with configurations, providing authentication,
  * role-based permissions via Spatie, and audit tracking integration. It serves as
  * the default user model for UltraConfigManager's audit and versioning features.
+ * Refactored to remove direct logging dependencies from boot method.
  *
  * @property int $id The unique identifier of the user.
  * @property string $name The user's display name.
@@ -21,10 +33,13 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $remember_token Token for "remember me" functionality.
  * @property \Illuminate\Support\Carbon|null $created_at Creation timestamp.
  * @property \Illuminate\Support\Carbon|null $updated_at Last update timestamp.
+ *
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, UltraConfigAudit> $audits
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, UltraConfigVersion> $versions
  */
 class User extends Authenticatable
 {
-    use Notifiable, HasRoles;
+    use Notifiable, HasRoles; // HasRoles incluso anche se non usato direttamente qui, per compatibilità Spatie
 
     /**
      * The table associated with the model.
@@ -36,7 +51,7 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -47,7 +62,7 @@ class User extends Authenticatable
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -61,58 +76,61 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed', // Aggiunto per Laravel 10+ standard
     ];
 
     /**
      * Get the audit entries created by this user.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Ultra\UltraConfigManager\Models\UltraConfigAudit>
      */
-    public function audits()
+    public function audits(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(UltraConfigAudit::class, 'user_id');
     }
 
     /**
      * Get the configuration versions created by this user.
+     * (Note: user_id is not standard on versions table based on stub)
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Ultra\UltraConfigManager\Models\UltraConfigVersion>
      */
-    public function versions()
+    public function versions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(UltraConfigVersion::class, 'user_id');
     }
 
     /**
-     * Boot the model and add security protections.
-     *
-     * Ensures that user creation and updates are logged and validated to prevent
-     * unauthorized or malformed data from being stored.
+     * Boot the model and add validation protections.
+     * Logging removed to decouple from specific logging implementation.
      *
      * @return void
+     * @throws InvalidArgumentException
      */
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
         static::creating(function ($model) {
+            // Validation only
             if (empty($model->name) || empty($model->email)) {
-                UltraLog::error('UCM Action', "Attempt to create user without name or email");
-                throw new \InvalidArgumentException('User must have a name and email');
+                // Logging removed
+                throw new InvalidArgumentException('User must have a name and email');
             }
             if (!filter_var($model->email, FILTER_VALIDATE_EMAIL)) {
-                UltraLog::error('UCM Action', "Invalid email format for user: {$model->email}");
-                throw new \InvalidArgumentException('User email must be a valid email address');
+                // Logging removed
+                throw new InvalidArgumentException('User email must be a valid email address');
             }
-            UltraLog::info('UCM Action', "Creating user: {$model->email}");
+            // Logging removed: UltraLog::info('UCM Action', "Creating user: {$model->email}");
         });
 
         static::updating(function ($model) {
+            // Validation only
             if ($model->isDirty('email') && !filter_var($model->email, FILTER_VALIDATE_EMAIL)) {
-                UltraLog::error('UCM Action', "Invalid email update attempt for user: {$model->email}");
-                throw new \InvalidArgumentException('User email must remain a valid email address');
+                // Logging removed
+                throw new InvalidArgumentException('User email must remain a valid email address');
             }
-            UltraLog::info('UCM Action', "Updating user: {$model->email}");
+            // Logging removed: UltraLog::info('UCM Action', "Updating user: {$model->email}");
         });
     }
 }

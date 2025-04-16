@@ -22,7 +22,10 @@
         "ultra/ultra-translation-manager": "dev-main"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.12"
+        "orchestra/testbench": "^9.12",
+        "laravel/framework": "^11.0",
+        "mockery/mockery": "^1.6",
+        "doctrine/dbal": "^3.0"
     },
     "autoload": {
         "psr-4": {
