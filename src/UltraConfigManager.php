@@ -124,7 +124,6 @@ class UltraConfigManager
     public function __construct(
         ConfigDaoInterface $configDao,
         VersionManager $versionManager,
-        GlobalConstants $globalConstants,
         CacheRepository $cacheRepository,
         LoggerInterface $logger,
         int $cacheTtl = 3600,
@@ -133,7 +132,6 @@ class UltraConfigManager
     ) {
         $this->configDao = $configDao;
         $this->versionManager = $versionManager;
-        $this->globalConstants = $globalConstants;
         $this->cacheRepository = $cacheRepository;
         $this->logger = $logger;
         $this->cacheTtl = $cacheTtl;

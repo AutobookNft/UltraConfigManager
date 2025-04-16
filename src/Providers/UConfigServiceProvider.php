@@ -144,7 +144,6 @@ class UConfigServiceProvider extends ServiceProvider
             // Resolve object dependencies from the container.
             $configDao = $app->make(ConfigDaoInterface::class);
             $versionManager = $app->make(VersionManager::class);
-            $globalConstants = $app->make(GlobalConstants::class);
             $cacheRepository = $app->make(CacheRepository::class);
             $logger = $app->make(LoggerInterface::class); // Resolves default logger
 
@@ -155,7 +154,7 @@ class UConfigServiceProvider extends ServiceProvider
 
             // Instantiate with correctly ordered dependencies.
             return new UltraConfigManager(
-                $configDao, $versionManager, $globalConstants, $cacheRepository, $logger,
+                $configDao, $versionManager, $cacheRepository, $logger,
                 $cacheTtl, $cacheEnabled, $loadOnInit
             );
         }); // End 'uconfig' singleton
