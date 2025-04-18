@@ -326,7 +326,7 @@ class EloquentConfigDao implements ConfigDaoInterface
 
                 // --- Handle Versioning (if requested AND it was an update/restore) ---
                 // Note: Typically, versioning is done on updates, not initial creation. Adjust if needed.
-                if ($createVersion && $isUpdate) { // Only version updates/restores
+                if ($createVersion) { // Only version updates/restores
                     $this->logger->debug('DAO: Creating version record.', ['config_id' => $configId]);
                     // VersionManager handles the details of version creation
                     $this->versionManager->createVersion($config, $effectiveUserId, $sourceFile); // Pass necessary data

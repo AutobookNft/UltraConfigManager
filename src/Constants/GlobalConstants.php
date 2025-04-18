@@ -38,7 +38,7 @@ use ReflectionClass; // For constant introspection
  * @internal This class uses Reflection API for its helper methods (`getConstant`, `validateConstant`).
  * @privacy-safe Constants defined here (NO_USER, DEFAULT_CATEGORY) are not PII.
  */
-final class GlobalConstants // Changed to final as it's not meant to be extended
+class GlobalConstants // Changed to final as it's not meant to be extended
 {
     /**
      * Identifier for an unknown, anonymous, or system user.

@@ -462,7 +462,8 @@ final class UltraConfigManager // Add final if class is not intended to be exten
         ?string $category = null,
         ?int $userId = null,
         bool $version = true,
-        bool $audit = true
+        bool $audit = true,
+        string $sourceFile = CategoryEnum::Application->value // Default source file
     ): void {
         $this->logger->info('UCM Set: Attempting to set configuration.', ['key' => $key, 'category' => $category, 'has_value' => $value !== null]);
 
@@ -499,6 +500,7 @@ final class UltraConfigManager // Add final if class is not intended to be exten
                 key: $key,
                 value: $value, // DAO/Model handles encryption
                 category: $validCategoryString,
+                sourceFile: $sourceFile, // Assuming this is the source file for all UCM entries
                 userId: $userId, // Pass userId directly
                 createVersion: $version,
                 createAudit: $audit,
@@ -507,7 +509,7 @@ final class UltraConfigManager // Add final if class is not intended to be exten
 
             // 2. Update In-Memory Store
             // Ensure structure consistency [key => ['value'=> ..., 'category' => ...]]
-            Arr::set($this->config, $key, ['value' => $value, 'category' => $validCategoryString]);
+            $this->config[$key] = ['value' => $value, 'category' => $validCategoryString];
             $this->logger->debug('UCM Set: In-memory configuration updated.', ['key' => $key]);
 
             // 3. Refresh Cache (Incremental)
