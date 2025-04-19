@@ -45,7 +45,7 @@ class GlobalConstants // Changed to final as it's not meant to be extended
      * Used in audit/version logs when a specific user context is unavailable.
      * @var int
      */
-    public const NO_USER = 0;
+    public const NO_USER = null;
 
     /**
      * Default configuration category identifier.
